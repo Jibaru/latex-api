@@ -1,9 +1,9 @@
-import { TemplateNotFoundError } from "../domain/errors.js";
-import type { Principal } from "../domain/job.js";
-import { createProject, normalizeProjectPath, type Project } from "../domain/project.js";
-import type { Template } from "../domain/template.js";
-import type { CompileOptionsInput } from "./compile-project.js";
-import type { CoreDeps } from "./deps.js";
+import { TemplateNotFoundError } from "../domain/errors";
+import type { Principal } from "../domain/job";
+import { createProject, normalizeProjectPath, type Project } from "../domain/project";
+import type { Template } from "../domain/template";
+import type { CompileOptionsInput } from "./compile-project";
+import type { CoreDeps } from "./deps";
 
 export class ListTemplates {
   constructor(private readonly deps: CoreDeps) {}

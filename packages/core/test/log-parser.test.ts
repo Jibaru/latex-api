@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseLatexLog, summarizeDiagnostics } from "../src/index.js";
+import { parseLatexLog, summarizeDiagnostics } from "../src/index";
 
 describe("parseLatexLog", () => {
   it("parses file-line-error messages with context", () => {

@@ -1,0 +1,30 @@
+{
+  "name": "@latex-api/infra",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@latex-api/core": "workspace:*",
+    "dockerode": "^5.0.1",
+    "pg": "^8.23.1",
+    "pg-boss": "^12.38.0",
+    "pino": "^10.4.0",
+    "yauzl": "^3.4.0"
+  },
+  "devDependencies": {
+    "@latex-api/config": "workspace:*",
+    "@types/dockerode": "^4.0.2",
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.23.1",
+    "@types/yauzl": "^3.4.0",
+    "typescript": "^5.9.0",
+    "vitest": "^5.0.5"
+  }
+}

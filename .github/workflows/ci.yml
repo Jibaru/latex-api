@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Lint, typecheck, unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.13.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec biome ci .
+      - run: pnpm turbo run typecheck
+      - run: pnpm turbo run test
+      - name: OpenAPI document is up to date
+        run: |
+          pnpm --filter @latex-api/api openapi
+          git diff --exit-code -- packages/openapi/openapi.json
+
+  integration:
+    name: Integration (real compiler image)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    needs: check
+    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'integration')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.13.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Resolve compiler image
+        id: image
+        run: |
+          HASH=$(find docker/compiler -type f | sort | xargs sha256sum | sha256sum | cut -c1-16)
+          IMAGE=ghcr.io/${{ github.repository_owner }}/latex-compiler
+          IMAGE=$(echo "$IMAGE" | tr '[:upper:]' '[:lower:]')
+          if docker manifest inspect "$IMAGE:sha-$HASH" >/dev/null 2>&1; then
+            docker pull "$IMAGE:sha-$HASH"
+            echo "ref=$IMAGE:sha-$HASH" >> "$GITHUB_OUTPUT"
+          else
+            echo "Compiler image for $HASH not published yet; building locally"
+            docker build -t latex-compiler:ci docker/compiler
+            echo "ref=latex-compiler:ci" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Compiler integration tests
+        env:
+          RUN_DOCKER_TESTS: "1"
+          COMPILER_IMAGE: ${{ steps.image.outputs.ref }}
+        run: pnpm --filter @latex-api/infra exec vitest run test/docker-compiler.integration.test.ts
+      - name: Compile every template
+        env:
+          COMPILER_IMAGE: ${{ steps.image.outputs.ref }}
+        run: pnpm --filter @latex-api/templates test:integration

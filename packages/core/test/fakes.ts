@@ -23,8 +23,8 @@ import type {
   WebhookNotifier,
   Workspace,
   Workspaces,
-} from "../src/index.js";
-import { DEFAULT_LIMITS, isTerminal } from "../src/index.js";
+} from "../src/index";
+import { DEFAULT_LIMITS, isTerminal } from "../src/index";
 
 export class FakeCompiler implements Compiler {
   calls: CompileRequest[] = [];

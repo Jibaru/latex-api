@@ -1,0 +1,10 @@
+{
+  "name": "@latex-api/openapi",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "OpenAPI 3.1 document for the LaTeX API, exported from apps/api (pnpm openapi).",
+  "main": "./openapi.json",
+  "exports": { ".": "./openapi.json", "./openapi.json": "./openapi.json" },
+  "files": ["openapi.json"]
+}

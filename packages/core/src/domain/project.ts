@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
-import { DEFAULT_ENGINE, detectEngineFromSource, type Engine, isEngine } from "./engine.js";
-import { InvalidProjectError, PayloadTooLargeError } from "./errors.js";
-import type { Limits } from "./limits.js";
+import { DEFAULT_ENGINE, detectEngineFromSource, type Engine, isEngine } from "./engine";
+import { InvalidProjectError, PayloadTooLargeError } from "./errors";
+import type { Limits } from "./limits";
 
 export interface ProjectFile {
   /** Normalized, relative, POSIX path inside the project (e.g. `sections/intro.tex`). */

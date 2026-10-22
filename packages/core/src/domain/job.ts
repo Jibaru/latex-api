@@ -1,5 +1,5 @@
-import type { Diagnostic } from "./diagnostic.js";
-import type { BibliographyMode, Engine } from "./engine.js";
+import type { Diagnostic } from "./diagnostic";
+import type { BibliographyMode, Engine } from "./engine";
 
 export const JOB_STATUSES = [
   "queued",

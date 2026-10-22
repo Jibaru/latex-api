@@ -1,4 +1,4 @@
-import type { Engine } from "./engine.js";
+import type { Engine } from "./engine";
 
 export interface TemplateVariable {
   name: string;

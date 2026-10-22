@@ -1,0 +1,77 @@
+# Production stack for Dokploy (Compose type). Images are built by GitHub Actions and
+# pulled from GHCR; nothing is built on the VPS.
+#
+# Required environment (set in Dokploy > Compose > Environment):
+#   API_KEYS, DATABASE_URL, PUBLIC_URL
+# Optional: IMAGE_TAG (default latest), MAX_CONCURRENT_JOBS, JOB_MEMORY, COMPILER_RUNTIME, LOG_LEVEL
+
+services:
+  api:
+    image: ghcr.io/jibaru/latex-api:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      HOSTNAME: "0.0.0.0"
+      PORT: "3000"
+      PUBLIC_URL: ${PUBLIC_URL:-https://latex-api.crafter.run}
+      API_KEYS: ${API_KEYS}
+      DATABASE_URL: ${DATABASE_URL}
+      DATA_DIR: /data
+      HOST_DATA_DIR: /opt/latex-api/data
+      TEMPLATES_DIR: /app/templates
+      COMPILER_IMAGE: ghcr.io/jibaru/latex-compiler:${COMPILER_TAG:-latest}
+      COMPILER_SECCOMP_PROFILE: /app/seccomp/clsi-profile.json
+      COMPILER_RUNTIME: ${COMPILER_RUNTIME:-}
+      COMPILER_USER: "1000:1000"
+      MAX_CONCURRENT_JOBS: ${MAX_CONCURRENT_JOBS:-2}
+      JOB_MEMORY: ${JOB_MEMORY:-2GB}
+      JOB_CPUS: ${JOB_CPUS:-2}
+      SYNC_TIMEOUT_MS: ${SYNC_TIMEOUT_MS:-60000}
+      JOB_TIMEOUT_MS: ${JOB_TIMEOUT_MS:-300000}
+      JOB_TIMEOUT_MAX_MS: ${JOB_TIMEOUT_MAX_MS:-600000}
+      ARTIFACT_TTL_HOURS: ${ARTIFACT_TTL_HOURS:-24}
+      RATE_LIMIT_PER_KEY_PER_HOUR: ${RATE_LIMIT_PER_KEY_PER_HOUR:-60}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    volumes:
+      # Host bind (not a named volume): compile containers mount sub-directories of it.
+      - /opt/latex-api/data:/data
+      # Only this service talks to the Docker daemon.
+      - /var/run/docker.sock:/var/run/docker.sock
+    # The node user (uid 1000) must be able to use the socket: match the host docker gid.
+    group_add:
+      - "${DOCKER_GID:-999}"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    networks:
+      - dokploy-network
+
+  web:
+    image: ghcr.io/jibaru/latex-api-web:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      HOSTNAME: "0.0.0.0"
+      PORT: "3001"
+      # Server-side fetches (templates, limits) go straight to the api service.
+      API_INTERNAL_URL: http://api:3000
+      NEXT_PUBLIC_API_URL: ""
+    depends_on:
+      - api
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    networks:
+      - dokploy-network
+
+networks:
+  dokploy-network:
+    external: true

@@ -11,8 +11,8 @@ import {
   ProcessCompileJob,
   PurgeExpired,
   RateLimitedError,
-} from "../src/index.js";
-import { MemoryTemplates, makeDeps } from "./fakes.js";
+} from "../src/index";
+import { MemoryTemplates, makeDeps } from "./fakes";
 
 const enc = (s: string) => new TextEncoder().encode(s);
 const principal = { name: "test", kind: "key" as const };

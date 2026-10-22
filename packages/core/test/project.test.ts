@@ -7,7 +7,7 @@ import {
   normalizeProjectPath,
   PayloadTooLargeError,
   projectHash,
-} from "../src/index.js";
+} from "../src/index";
 
 const enc = (s: string) => new TextEncoder().encode(s);
 

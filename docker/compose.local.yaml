@@ -1,0 +1,63 @@
+# Local / self-hosted stack: `docker compose -f docker/compose.local.yaml up`
+# Builds the images from this checkout. First build of the compiler takes a while.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: latex
+      POSTGRES_PASSWORD: latex
+      POSTGRES_DB: latex
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U latex"]
+      interval: 5s
+      retries: 10
+
+  compiler:
+    build: ./compiler
+    image: latex-compiler:local
+    command: ["--version"]
+
+  api:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    image: latex-api:local
+    depends_on:
+      postgres:
+        condition: service_healthy
+      compiler:
+        condition: service_completed_successfully
+    ports:
+      - "3000:3000"
+    environment:
+      API_KEYS: ${API_KEYS:-dev:devkey}
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:3000}
+      DATABASE_URL: postgresql://latex:latex@postgres:5432/latex
+      DATA_DIR: /data
+      HOST_DATA_DIR: ${HOST_DATA_DIR:?set HOST_DATA_DIR to the absolute host path of ./.data}
+      COMPILER_IMAGE: latex-compiler:local
+      COMPILER_SECCOMP_PROFILE: /app/seccomp/clsi-profile.json
+      MAX_CONCURRENT_JOBS: 2
+    volumes:
+      - ${HOST_DATA_DIR:?}:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    group_add:
+      - "${DOCKER_GID:-999}"
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+    image: latex-api-web:local
+    depends_on:
+      - api
+    ports:
+      - "3001:3001"
+    environment:
+      API_INTERNAL_URL: http://api:3000
+      NEXT_PUBLIC_API_URL: http://localhost:3000
+
+volumes:
+  pgdata:

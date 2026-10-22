@@ -1,15 +1,15 @@
-import type { BibliographyMode } from "../domain/engine.js";
-import { InvalidProjectError, RateLimitedError } from "../domain/errors.js";
-import type { CompileJob, CompileOptions, JobMode, Principal } from "../domain/job.js";
-import { type Project, projectHash } from "../domain/project.js";
+import type { BibliographyMode } from "../domain/engine";
+import { InvalidProjectError, RateLimitedError } from "../domain/errors";
+import type { CompileJob, CompileOptions, JobMode, Principal } from "../domain/job";
+import { type Project, projectHash } from "../domain/project";
 import {
   buildJob,
   cancelSignalReason,
   cloneCachedJob,
   isCacheable,
   runCompile,
-} from "./compile-pipeline.js";
-import type { CoreDeps } from "./deps.js";
+} from "./compile-pipeline";
+import type { CoreDeps } from "./deps";
 
 export interface CompileOptionsInput {
   timeoutMs?: number;

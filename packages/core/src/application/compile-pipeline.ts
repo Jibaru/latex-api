@@ -1,8 +1,8 @@
-import type { CompileJob, JobResult } from "../domain/job.js";
-import { parseLatexLog, summarizeDiagnostics } from "../domain/log-parser.js";
-import type { Project } from "../domain/project.js";
-import type { Workspace } from "../ports/index.js";
-import { artifactKeys, type CoreDeps } from "./deps.js";
+import type { CompileJob, JobResult } from "../domain/job";
+import { parseLatexLog, summarizeDiagnostics } from "../domain/log-parser";
+import type { Project } from "../domain/project";
+import type { Workspace } from "../ports/index";
+import { artifactKeys, type CoreDeps } from "./deps";
 
 /**
  * Shared compile pipeline for sync, async and demo compiles. Mutates and persists the job.

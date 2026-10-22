@@ -1,0 +1,37 @@
+{
+  "name": "@latex-api/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start --port 3000",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:integration": "RUN_DOCKER_TESTS=1 vitest run --config vitest.integration.config.ts",
+    "openapi": "tsx scripts/export-openapi.ts"
+  },
+  "dependencies": {
+    "@hono/vercel": "^1.0.1",
+    "@hono/zod-openapi": "^1.6.3",
+    "@latex-api/core": "workspace:*",
+    "@latex-api/infra": "workspace:*",
+    "@scalar/nextjs-api-reference": "^0.12.11",
+    "fflate": "^0.8.3",
+    "hono": "^4.13.13",
+    "next": "16.4.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@latex-api/config": "workspace:*",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^5.0.5"
+  }
+}

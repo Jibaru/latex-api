@@ -1,7 +1,7 @@
-import type { Engine } from "../domain/engine.js";
-import type { CompileJob, CompileOptions, JobEvent, JobStatus, Principal } from "../domain/job.js";
-import type { Project, ProjectFile } from "../domain/project.js";
-import type { Template } from "../domain/template.js";
+import type { Engine } from "../domain/engine";
+import type { CompileJob, CompileOptions, JobEvent, JobStatus, Principal } from "../domain/job";
+import type { Project, ProjectFile } from "../domain/project";
+import type { Template } from "../domain/template";
 
 // ---------------------------------------------------------------------------
 // Compilation

@@ -1,0 +1,10 @@
+**/node_modules
+**/.next
+**/.turbo
+**/dist
+**/.data
+**/coverage
+.git
+*.log
+packages/sdk/src/client
+apps/web/.source

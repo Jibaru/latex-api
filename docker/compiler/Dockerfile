@@ -30,8 +30,8 @@ RUN set -eux; \
       collection-pictures collection-latexextra collection-bibtexextra collection-luatex \
       collection-fontsrecommended collection-langspanish collection-mathscience collection-binextra \
       latexmk biber ieeetran fontawesome5 fontawesome6 academicons simpleicons \
-      roboto sourcesans sourcesanspro lato raleway fira firamath inter montserrat \
-      cm-super lm-math xits libertinus-fonts gnu-freefont \
+      roboto sourcesans lato raleway fira firamath inter montserrat \
+      lm-math xits libertinus-fonts gnu-freefont \
       biblatex-ieee biblatex-apa; \
     tlmgr option autobackup 0; \
     rm -rf /opt/texlive/tlpkg/backups /opt/texlive/texmf-dist/doc /opt/texlive/texmf-dist/source
@@ -54,8 +54,7 @@ RUN set -eux; cd /tmp/warm; \
     latexmk -pdf -interaction=nonstopmode -halt-on-error warm-pdflatex.tex; \
     latexmk -xelatex -interaction=nonstopmode -halt-on-error warm-xelatex.tex; \
     TEXMFVAR=/opt/texlive/texmf-var latexmk -lualatex -interaction=nonstopmode -halt-on-error warm-lualatex.tex; \
-    cd / && rm -rf /tmp/warm; \
-    chmod -R a+rX /opt/texlive
+    cd / && rm -rf /tmp/warm
 
 COPY --chmod=0755 compile.sh /usr/local/bin/compile
 COPY VERSION /etc/latex-compiler-version

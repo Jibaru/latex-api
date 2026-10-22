@@ -1,4 +1,4 @@
-import type { Diagnostic } from "./diagnostic.js";
+import type { Diagnostic } from "./diagnostic";
 
 const FILE_LINE_ERROR =
   /^(?:\.\/)?([^\s:]+\.(?:tex|ltx|sty|cls|bib|bbl|def|cfg|clo|fd|lua))?:(\d+): (.+)$/;

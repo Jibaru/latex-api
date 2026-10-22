@@ -1,20 +1,20 @@
-import { JobNotCancellableError, JobNotFoundError } from "../domain/errors.js";
-import { type CompileJob, canCancel, isTerminal } from "../domain/job.js";
-import { projectHash } from "../domain/project.js";
+import { JobNotCancellableError, JobNotFoundError } from "../domain/errors";
+import { type CompileJob, canCancel, isTerminal } from "../domain/job";
+import { projectHash } from "../domain/project";
 import {
   buildJob,
   cancelSignalReason,
   cloneCachedJob,
   isCacheable,
   runCompile,
-} from "./compile-pipeline.js";
+} from "./compile-pipeline";
 import {
   acquireSlots,
   type CompileCommand,
   enforceRateLimit,
   resolveOptions,
-} from "./compile-project.js";
-import type { CoreDeps } from "./deps.js";
+} from "./compile-project";
+import type { CoreDeps } from "./deps";
 
 /** Creates a job, stores the workspace and enqueues it. Returns immediately. */
 export class EnqueueCompileJob {

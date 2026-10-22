@@ -1,4 +1,4 @@
-import type { Limits } from "../domain/limits.js";
+import type { Limits } from "../domain/limits";
 import type {
   ApiKeyResolver,
   ArtifactStore,
@@ -13,7 +13,7 @@ import type {
   TemplateRepository,
   WebhookNotifier,
   Workspaces,
-} from "../ports/index.js";
+} from "../ports/index";
 
 export interface CoreDeps {
   limits: Limits;

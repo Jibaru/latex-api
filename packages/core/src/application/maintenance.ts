@@ -1,6 +1,6 @@
-import { ENGINES } from "../domain/engine.js";
-import type { PublicLimits } from "../domain/limits.js";
-import { artifactKeys, type CoreDeps } from "./deps.js";
+import { ENGINES } from "../domain/engine";
+import type { PublicLimits } from "../domain/limits";
+import { artifactKeys, type CoreDeps } from "./deps";
 
 /** Deletes expired jobs and the artifacts nobody references any more. */
 export class PurgeExpired {
