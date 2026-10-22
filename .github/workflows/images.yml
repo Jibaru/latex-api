@@ -11,6 +11,10 @@ on:
         type: boolean
         default: true
 
+concurrency:
+  group: images-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   packages: write

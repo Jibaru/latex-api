@@ -54,13 +54,17 @@ RUN set -eux; cd /tmp/warm; \
     latexmk -pdf -interaction=nonstopmode -halt-on-error warm-pdflatex.tex; \
     latexmk -xelatex -interaction=nonstopmode -halt-on-error warm-xelatex.tex; \
     TEXMFVAR=/opt/texlive/texmf-var latexmk -lualatex -interaction=nonstopmode -halt-on-error warm-lualatex.tex; \
-    cd / && rm -rf /tmp/warm
+    cd / && rm -rf /tmp/warm; \
+    ls /opt/texlive/texmf-var/luatex-cache/generic/names
 
 COPY --chmod=0755 compile.sh /usr/local/bin/compile
 COPY VERSION /etc/latex-compiler-version
 
+# luaotfload reads its font name database from the baked system cache (read-only) and
+# only writes lookup caches into the per-job tmpfs.
 ENV HOME=/tmp/home \
     TEXMFVAR=/tmp/home/texmf-var \
+    TEXMFCACHE=/opt/texlive/texmf-var:/tmp/home/texmf-var \
     TEXMFCONFIG=/tmp/home/texmf-config \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8
