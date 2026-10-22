@@ -1,15 +1,23 @@
 import { InlineJobQueue, migrate, PgBossQueue } from "@latex-api/infra";
 import { getContainer } from "./container";
 
-let booted: Promise<void> | undefined;
+const BOOT_KEY = Symbol.for("latex-api.boot");
+type GlobalWithBoot = typeof globalThis & { [BOOT_KEY]?: Promise<void> };
 
 /**
  * Process start-up: migrations, queue workers, scheduled purge, crash recovery.
- * Safe to call more than once; the work happens a single time per process.
+ * Safe to call more than once; the work happens a single time per process (the promise
+ * lives on globalThis because Next.js bundles instrumentation separately from routes).
  */
 export function boot(): Promise<void> {
-  if (!booted) booted = doBoot();
-  return booted;
+  const g = globalThis as GlobalWithBoot;
+  if (!g[BOOT_KEY]) {
+    g[BOOT_KEY] = doBoot().catch((error) => {
+      g[BOOT_KEY] = undefined;
+      throw error;
+    });
+  }
+  return g[BOOT_KEY];
 }
 
 async function doBoot(): Promise<void> {

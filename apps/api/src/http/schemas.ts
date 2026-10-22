@@ -45,13 +45,10 @@ export const CompileOptionsSchema = z
 export const CompileRequestSchema = z
   .object({
     files: z.array(ProjectFileSchema).min(1).max(1000),
-    entrypoint: z
-      .string()
-      .optional()
-      .openapi({
-        example: "main.tex",
-        description: "Main .tex file. Guessed when there is a single .tex or a main.tex.",
-      }),
+    entrypoint: z.string().optional().openapi({
+      example: "main.tex",
+      description: "Main .tex file. Guessed when there is a single .tex or a main.tex.",
+    }),
     engine: EngineSchema.optional(),
     options: CompileOptionsSchema.optional(),
   })

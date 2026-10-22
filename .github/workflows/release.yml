@@ -35,7 +35,12 @@ jobs:
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
       - run: pnpm turbo run build --filter=@jibaru/latex-api-sdk --filter=@jibaru/latex-api-cli
+      - name: Check npm token
+        id: npm
+        run: |
+          if [ -n "${{ secrets.NPM_TOKEN }}" ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "present=false" >> "$GITHUB_OUTPUT"; echo "NPM_TOKEN secret missing: skipping publish"; fi
       - name: Version packages or publish
+        if: steps.npm.outputs.present == 'true'
         uses: changesets/action@v1
         with:
           publish: pnpm changeset publish

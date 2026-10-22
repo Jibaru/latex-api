@@ -64,13 +64,18 @@ export interface Container {
   };
 }
 
-let instance: Container | undefined;
+const GLOBAL_KEY = Symbol.for("latex-api.container");
+type GlobalWithContainer = typeof globalThis & { [GLOBAL_KEY]?: Container };
 
-/** Composition root. Built once per process, lazily, so `next build` never touches infra. */
+/**
+ * Composition root. Built once per process, lazily, so `next build` never touches infra.
+ * Stored on globalThis because Next.js bundles instrumentation and route handlers
+ * separately; module-level singletons would otherwise be duplicated.
+ */
 export function getContainer(): Container {
-  if (instance) return instance;
-  instance = build(loadConfig());
-  return instance;
+  const g = globalThis as GlobalWithContainer;
+  if (!g[GLOBAL_KEY]) g[GLOBAL_KEY] = build(loadConfig());
+  return g[GLOBAL_KEY];
 }
 
 export function build(config: InfraConfig): Container {
@@ -151,5 +156,5 @@ export function build(config: InfraConfig): Container {
 
 /** Test hook. */
 export function setContainer(container: Container | undefined): void {
-  instance = container;
+  (globalThis as GlobalWithContainer)[GLOBAL_KEY] = container;
 }

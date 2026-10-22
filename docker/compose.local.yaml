@@ -43,8 +43,6 @@ services:
     volumes:
       - ${HOST_DATA_DIR:?}:/data
       - /var/run/docker.sock:/var/run/docker.sock
-    group_add:
-      - "${DOCKER_GID:-999}"
 
   web:
     build:

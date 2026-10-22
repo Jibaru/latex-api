@@ -61,7 +61,7 @@ export async function runCompile(
       );
       result.pdfKey = pdfStored.key;
       result.pdfBytes = pdfStored.size;
-      result.pages = countPdfPages(output.pdf);
+      result.pages = pagesFromLog(fullLog) ?? countPdfPages(output.pdf);
     }
 
     job.result = result;
@@ -207,7 +207,15 @@ function cancelRequested(signal: AbortSignal): boolean {
   return signal.reason === CANCEL_REASON || signal.reason?.message === CANCEL_REASON;
 }
 
-/** Cheap page count: counts `/Type /Page` objects (not `/Pages`). Good enough for stats. */
+/** Page count as reported by the engine: `Output written on main.pdf (3 pages, 1234 bytes).` */
+export function pagesFromLog(log: string): number | undefined {
+  const matches = log.match(/Output written on [^\n]*?\((\d+) pages?/g);
+  if (!matches || matches.length === 0) return undefined;
+  const last = /\((\d+) pages?/.exec(matches[matches.length - 1]!);
+  return last ? Number(last[1]) : undefined;
+}
+
+/** Fallback page count for PDFs without object streams: counts `/Type /Page` objects. */
 export function countPdfPages(pdf: Uint8Array): number | undefined {
   const text = latin1(pdf);
   const matches = text.match(/\/Type\s*\/Page(?![s\w])/g);

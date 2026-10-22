@@ -29,17 +29,18 @@ FROM node:22-slim AS runner
 ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0 NEXT_TELEMETRY_DISABLED=1 \
     DATA_DIR=/data TEMPLATES_DIR=/app/templates
 WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends tini curl && rm -rf /var/lib/apt/lists/* \
+RUN apt-get update && apt-get install -y --no-install-recommends tini curl acl && rm -rf /var/lib/apt/lists/* \
  && mkdir -p /data && chown node:node /data
 COPY --from=builder --chown=node:node /repo/apps/api/.next/standalone ./
 COPY --from=builder --chown=node:node /repo/apps/api/.next/static ./apps/api/.next/static
 COPY --from=builder --chown=node:node /repo/apps/api/public ./apps/api/public
 COPY --chown=node:node packages/templates/templates ./templates
 COPY --chown=node:node docker/seccomp ./seccomp
+COPY --chmod=0755 docker/api-entrypoint.sh /usr/local/bin/latex-api-entrypoint
 ARG API_VERSION=0.0.0-dev
 ENV API_VERSION=$API_VERSION
-USER node
+# Starts as root and drops to `node` immediately (see docker/api-entrypoint.sh).
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD curl -fsS http://127.0.0.1:3000/health || exit 1
-ENTRYPOINT ["/usr/bin/tini", "--"]
+ENTRYPOINT ["/usr/local/bin/latex-api-entrypoint"]
 CMD ["node", "apps/api/server.js"]

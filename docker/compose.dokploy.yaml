@@ -37,9 +37,8 @@ services:
       - /opt/latex-api/data:/data
       # Only this service talks to the Docker daemon.
       - /var/run/docker.sock:/var/run/docker.sock
-    # The node user (uid 1000) must be able to use the socket: match the host docker gid.
-    group_add:
-      - "${DOCKER_GID:-999}"
+    # The entrypoint starts as root, grants the node user access to the socket and the data
+    # directory, then drops privileges (docker/api-entrypoint.sh).
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/health"]
       interval: 30s

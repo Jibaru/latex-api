@@ -52,13 +52,11 @@ const fileRoute = createRoute({
   summary: "Read one template file",
   request: {
     params: TemplateIdParam.extend({
-      path: z
-        .string()
-        .openapi({
-          param: { name: "path", in: "path" },
-          example: "main.tex",
-          description: "URL-encoded relative path.",
-        }),
+      path: z.string().openapi({
+        param: { name: "path", in: "path" },
+        example: "main.tex",
+        description: "URL-encoded relative path.",
+      }),
     }),
   },
   responses: {

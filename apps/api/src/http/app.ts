@@ -14,11 +14,26 @@ import { registerTemplateRoutes } from "./routes/templates";
 let app: OpenAPIHono<Env> | undefined;
 
 export function getHttpApp(): OpenAPIHono<Env> {
-  if (!app) app = createHttpApp();
+  if (!app) {
+    app = createHttpApp(getContainer, {
+      ensureReady: async () => {
+        const { boot } = await import("../boot");
+        await boot();
+      },
+    });
+  }
   return app;
 }
 
-export function createHttpApp(containerFactory = getContainer): OpenAPIHono<Env> {
+export interface HttpAppOptions {
+  /** Awaited before the first request is handled (migrations, workers). */
+  ensureReady?: () => Promise<void>;
+}
+
+export function createHttpApp(
+  containerFactory = getContainer,
+  options: HttpAppOptions = {},
+): OpenAPIHono<Env> {
   const hono = new OpenAPIHono<Env>({
     defaultHook: (result, c) => {
       if (!result.success) {
@@ -31,6 +46,7 @@ export function createHttpApp(containerFactory = getContainer): OpenAPIHono<Env>
   });
 
   hono.use("*", async (c, next) => {
+    if (options.ensureReady) await options.ensureReady();
     const container = containerFactory();
     c.set("container", container);
     c.set("requestId", c.req.header("x-request-id") ?? randomUUID());
