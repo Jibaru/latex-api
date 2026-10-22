@@ -1,0 +1,9 @@
+\documentclass{article}
+\usepackage{fontspec,fontawesome5,tikz,xcolor,geometry,hyperref,unicode-math}
+\setmainfont{TeX Gyre Pagella}
+\setsansfont[Renderer=HarfBuzz]{Roboto}
+\setmathfont{Latin Modern Math}
+\begin{document}
+\faLinkedin\ Warm-up for lualatex with HarfBuzz fonts. {\sffamily Roboto sans.} $\int_0^\infty e^{-x}\,dx = 1$
+\begin{tikzpicture}\draw[thick,->] (0,0) -- (2,1);\end{tikzpicture}
+\end{document}

@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.next/
+.turbo/
+out/
+coverage/
+*.log
+.env
+.env.*
+!.env.example
+.data/
+.DS_Store
+Thumbs.db
+packages/sdk/src/client/
+apps/web/.source/
+*.tsbuildinfo

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": [
+    "@latex-api/api",
+    "@latex-api/web",
+    "@latex-api/core",
+    "@latex-api/infra",
+    "@latex-api/templates",
+    "@latex-api/openapi",
+    "@latex-api/config"
+  ]
+}
