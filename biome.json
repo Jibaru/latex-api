@@ -16,7 +16,13 @@
       "!packages/sdk/src/client",
       "!packages/templates/**/*.tex",
       "!**/.source",
-      "!**/openapi.json"
+      "!**/openapi.json",
+      "!pnpm-lock.yaml",
+      "!**/*.md",
+      "!**/*.mdx",
+      "!**/*.yaml",
+      "!**/*.yml",
+      "!**/*.css"
     ]
   },
   "formatter": {
