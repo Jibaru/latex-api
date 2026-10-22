@@ -10,6 +10,9 @@ import {
 } from "@latex-api/core";
 
 const IGNORED = new Set(["manifest.json", "preview.png", "preview.pdf", ".DS_Store", "README.md"]);
+/** Build artifacts that may be left behind by local compiles; never part of a template. */
+const ARTIFACT_EXT =
+  /\.(aux|log|fls|fdb_latexmk|out|toc|lof|lot|bbl|blg|bcf|run\.xml|synctex(\.gz)?|xdv|nav|snm|vrb|idx|ilg|ind|glo|gls|dvi)$/i;
 
 /**
  * Templates are directories under `templatesDir`, each with a `manifest.json` and the
@@ -42,7 +45,10 @@ export class FsTemplateRepository implements TemplateRepository {
         continue;
       }
       if (!TEMPLATE_ID.test(manifest.id) || manifest.id !== entry.name) continue;
-      const files = await collect(dir, dir);
+      const entryBase = manifest.entrypoint.replace(/\.(tex|ltx|latex)$/i, "");
+      const files = (await collect(dir, dir)).filter(
+        (f) => !ARTIFACT_EXT.test(f.path) && f.path !== `${entryBase}.pdf`,
+      );
       const editable = new Set(manifest.editable ?? [manifest.entrypoint]);
       const template: Template = {
         ...manifest,
