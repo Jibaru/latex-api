@@ -33,23 +33,22 @@ The schema is `TemplateManifest` in `packages/core/src/domain/template.ts`:
 
 ```jsonc
 {
-  "id": "report-es",                    // must equal the directory name, /^[a-z0-9][a-z0-9-]{1,63}$/
+  "id": "report-es", // must equal the directory name, /^[a-z0-9][a-z0-9-]{1,63}$/
   "name": "Technical report (Spanish)",
   "description": "One or two sentences shown in the catalogue.",
-  "category": "report",                 // paper | cv | brochure | poster | report | letter | other
-  "engine": "pdflatex",                 // pdflatex | xelatex | lualatex
-  "entrypoint": "main.tex",             // relative path of the file to compile
+  "category": "report", // paper | cv | brochure | poster | report | letter | other
+  "engine": "pdflatex", // pdflatex | xelatex | lualatex
+  "entrypoint": "main.tex", // relative path of the file to compile
   "tags": ["spanish", "report"],
   "license": "Human readable license of the class/template (e.g. LPPL 1.3c).",
-  "source": "https://...",              // optional: where the class/template comes from
-  "variables": [],                      // reserved for future placeholder substitution
+  "source": "https://...", // optional: where the class/template comes from
+  "variables": [], // reserved for future placeholder substitution
   "editable": ["main.tex", "refs.bib"], // files users are expected to edit, entrypoint first
-  "preview": "preview.png"              // optional, relative path of a shipped preview image
+  "preview": "preview.png" // optional, relative path of a shipped preview image
 }
 ```
 
 Rules:
-
 - `id` is the directory name and is immutable once published.
 - `entrypoint` and every path in `editable` must exist.
 - Only packages available in the compiler image may be used (TeX Live
