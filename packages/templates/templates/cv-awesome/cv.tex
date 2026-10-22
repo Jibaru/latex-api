@@ -1,0 +1,66 @@
+% !TEX program = lualatex
+% Awesome-CV résumé template (https://github.com/posquit0/Awesome-CV).
+% Class: awesome-cv.cls (LPPL 1.3c). Requires LuaLaTeX; the class loads the
+% "Source Sans 3" and "Roboto" font families, which ship with TeX Live
+% (packages sourcesans and roboto) and are available in the compiler image.
+%
+% Edit your personal information below and the section files in sections/.
+\documentclass[11pt, a4paper]{awesome-cv}
+
+% Page margins
+\geometry{left=1.4cm, top=.8cm, right=1.4cm, bottom=1.8cm, footskip=.5cm}
+
+% Highlight color. Built-in choices: awesome-emerald, awesome-skyblue, awesome-red,
+% awesome-pink, awesome-orange, awesome-nephritis, awesome-concrete, awesome-darknight
+\colorlet{awesome}{awesome-skyblue}
+% Or define your own:
+% \definecolor{awesome}{HTML}{3E6D9C}
+
+% Set false if you don't want section titles highlighted with the accent color
+\setbool{acvSectionColorHighlight}{true}
+
+% Separator between social links in the header
+\renewcommand{\acvHeaderSocialSep}{\quad\textbar\quad}
+
+%-------------------------------------------------------------------------------
+%	PERSONAL INFORMATION (comment out any line you do not need)
+%-------------------------------------------------------------------------------
+\name{Alex}{Rivera}
+\position{Senior Software Engineer{\enskip\cdotp\enskip}Platform \& Infrastructure}
+\address{Lima, Peru}
+
+\mobile{(+51) 900 000 000}
+\email{alex.rivera@example.com}
+\homepage{alexrivera.example.com}
+\github{alex-rivera-example}
+\linkedin{alex-rivera-example}
+% \gitlab{gitlab-id}
+% \stackoverflow{SO-id}{SO-name}
+% \x{x-id}
+% \telegram{telegram-username}
+% \googlescholar{googlescholar-id}{name-to-display}
+% \extrainfo{extra information}
+
+\quote{``Make it work, make it right, make it fast.''}
+
+%-------------------------------------------------------------------------------
+\begin{document}
+
+% Header alignment: C (center), L (left) or R (right)
+\makecvheader[C]
+
+% Footer: left, center, right
+\makecvfooter
+  {\today}
+  {Alex Rivera~~~·~~~Résumé}
+  {\thepage}
+
+%-------------------------------------------------------------------------------
+%	CONTENT (one file per section, edit or reorder as needed)
+%-------------------------------------------------------------------------------
+\input{sections/summary.tex}
+\input{sections/experience.tex}
+\input{sections/skills.tex}
+\input{sections/education.tex}
+
+\end{document}

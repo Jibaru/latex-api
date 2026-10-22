@@ -1,0 +1,20 @@
+# Build artifacts produced when compiling the templates (see scripts/compile-all.mjs)
+templates/**/*.pdf
+templates/**/*.aux
+templates/**/*.log
+templates/**/*.out
+templates/**/*.bbl
+templates/**/*.blg
+templates/**/*.bcf
+templates/**/*.run.xml
+templates/**/*.fls
+templates/**/*.fdb_latexmk
+templates/**/*.toc
+templates/**/*.lof
+templates/**/*.lot
+templates/**/*.synctex.gz
+templates/**/*.xdv
+templates/**/*.nav
+templates/**/*.snm
+templates/**/*.vrb
+templates/**/*.xmpi

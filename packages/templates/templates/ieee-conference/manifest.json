@@ -1,0 +1,13 @@
+{
+  "id": "ieee-conference",
+  "name": "IEEE conference paper",
+  "description": "Two-column IEEEtran conference paper with abstract, keywords, TikZ figure, pgfplots chart, booktabs table, equations and a BibTeX bibliography.",
+  "category": "paper",
+  "engine": "pdflatex",
+  "entrypoint": "main.tex",
+  "tags": ["ieee", "conference", "paper", "bibtex", "two-column"],
+  "license": "IEEEtran class: LPPL 1.3 (Michael Shell / IEEE). Template content: MIT.",
+  "source": "https://ctan.org/pkg/ieeetran",
+  "variables": [],
+  "editable": ["main.tex", "refs.bib"]
+}

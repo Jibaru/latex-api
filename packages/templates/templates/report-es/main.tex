@@ -1,0 +1,173 @@
+% !TEX program = pdflatex
+% Informe técnico en español (clase report, A4, 12 pt).
+% Edite la portada, los capítulos en chapters/ y la bibliografía en refs.bib.
+\documentclass[12pt,a4paper]{report}
+
+%---------------------------------------------------------------------
+% Idioma y codificación
+%---------------------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-tabla]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+%---------------------------------------------------------------------
+% Diseño de página y tipografía
+%---------------------------------------------------------------------
+\usepackage[a4paper,top=2.5cm,bottom=2.5cm,left=3cm,right=2.5cm,headheight=15pt]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage[dvipsnames]{xcolor}
+
+\definecolor{principal}{HTML}{1F3A5F}
+\definecolor{acento}{HTML}{C9742A}
+
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries\color{principal}}
+  {\filleft\large\chaptertitlename~\thechapter}
+  {12pt}
+  {\titlerule[1.2pt]\vspace{6pt}\filright}
+\titlespacing*{\chapter}{0pt}{0pt}{30pt}
+\titleformat{\section}{\normalfont\Large\bfseries\color{principal}}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries\color{principal!80!black}}{\thesubsection}{1em}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\nouppercase{\leftmark}}
+\fancyhead[R]{\small Informe técnico}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\thepage}\renewcommand{\headrulewidth}{0pt}}
+
+%---------------------------------------------------------------------
+% Figuras, tablas, matemáticas y código
+%---------------------------------------------------------------------
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{caption}
+\captionsetup{font=small,labelfont={bf,color=principal}}
+\usepackage{amsmath,amssymb}
+\usepackage{siunitx}
+\sisetup{locale=DE, output-decimal-marker={,}}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc,backgrounds,fit}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{principal}\bfseries,
+  commentstyle=\color{gray}\itshape,
+  stringstyle=\color{acento},
+  numbers=left, numberstyle=\tiny\color{gray}, numbersep=8pt,
+  frame=single, rulecolor=\color{gray!50}, framesep=4pt,
+  breaklines=true, showstringspaces=false,
+  inputencoding=utf8, extendedchars=true,
+  literate={á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1 {ñ}{{\~n}}1 {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1 {Ñ}{{\~N}}1,
+}
+\renewcommand{\lstlistingname}{Listado}
+\usepackage{enumitem}
+
+%---------------------------------------------------------------------
+% Bibliografía y enlaces
+%---------------------------------------------------------------------
+\usepackage[round,authoryear]{natbib}
+\usepackage[hidelinks,unicode]{hyperref}
+\hypersetup{
+  pdftitle={Compilación de documentos LaTeX en la nube},
+  pdfauthor={Alex Rivera},
+  pdfsubject={Informe técnico},
+}
+
+%---------------------------------------------------------------------
+% Datos del documento
+%---------------------------------------------------------------------
+\newcommand{\titulo}{Compilación de documentos \LaTeX{} en la nube}
+\newcommand{\subtitulo}{Diseño, aislamiento y evaluación de un servicio de compilación}
+\newcommand{\autor}{Alex Rivera}
+\newcommand{\institucion}{Universidad Nacional de Ejemplo}
+\newcommand{\unidad}{Facultad de Ingeniería de Sistemas}
+\newcommand{\ciudad}{Lima, Perú}
+\newcommand{\fecha}{Abril de 2026}
+\newcommand{\codigo}{INF-2026-014}
+
+\begin{document}
+
+%=====================================================================
+% PORTADA
+%=====================================================================
+\begin{titlepage}
+  \begin{tikzpicture}[remember picture,overlay]
+    \fill[principal] (current page.north west) rectangle ([yshift=-5.5cm]current page.north east);
+    \fill[acento] ([yshift=-5.5cm]current page.north west) rectangle ([yshift=-5.8cm]current page.north east);
+    \node[anchor=north west, text=white, font=\large\bfseries, xshift=3cm, yshift=-2cm]
+      at (current page.north west) {\institucion};
+    \node[anchor=north west, text=white!85!principal, font=\normalsize, xshift=3cm, yshift=-2.8cm]
+      at (current page.north west) {\unidad};
+    \node[anchor=north east, text=white, font=\small, xshift=-2.5cm, yshift=-2cm]
+      at (current page.north east) {Informe \codigo};
+  \end{tikzpicture}
+
+  \vspace*{6cm}
+  \begin{flushleft}
+    {\Huge\bfseries\color{principal}\titulo\par}
+    \vspace{0.8cm}
+    {\Large\color{black!70}\subtitulo\par}
+    \vspace{1.2cm}
+    {\color{acento}\rule{4cm}{2pt}\par}
+    \vspace{1.2cm}
+    {\large\textbf{Autor:} \autor\par}
+    \vspace{0.3cm}
+    {\large\textbf{Ciudad:} \ciudad\par}
+    \vspace{0.3cm}
+    {\large\textbf{Fecha:} \fecha\par}
+  \end{flushleft}
+
+  \vfill
+  \begin{center}
+    \small Este documento es una plantilla con contenido ficticio de demostración.
+  \end{center}
+\end{titlepage}
+
+%=====================================================================
+% RESUMEN E ÍNDICES
+%=====================================================================
+\pagenumbering{roman}
+
+\chapter*{Resumen}
+\addcontentsline{toc}{chapter}{Resumen}
+Este informe describe el diseño y la evaluación de un servicio que compila
+proyectos \LaTeX{} bajo demanda dentro de contenedores efímeros sin acceso a
+la red. Se presenta la arquitectura general, el modelo de aislamiento
+utilizado para ejecutar documentos de origen no confiable y una caché de
+artefactos direccionada por contenido. Las mediciones realizadas sobre un
+conjunto de 120 documentos muestran que, para documentos breves, el arranque
+del contenedor y no el motor de composición es el principal componente de la
+latencia, y que precalentar la imagen reduce la latencia mediana en un 38~\%.
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+\cleardoublepage
+\pagenumbering{arabic}
+
+%=====================================================================
+% CAPÍTULOS
+%=====================================================================
+\input{chapters/01-introduccion.tex}
+\input{chapters/02-diseno.tex}
+\input{chapters/03-resultados.tex}
+
+%=====================================================================
+% BIBLIOGRAFÍA
+%=====================================================================
+\cleardoublepage
+\addcontentsline{toc}{chapter}{Bibliografía}
+\bibliographystyle{apalike}
+\bibliography{refs}
+
+\end{document}

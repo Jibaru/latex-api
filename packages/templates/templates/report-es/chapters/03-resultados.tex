@@ -1,0 +1,108 @@
+\chapter{Evaluación y resultados}
+\label{cap:resultados}
+
+\section{Metodología}
+Se recopilaron 120 proyectos públicos de distinto tipo (artículos de
+congreso, artículos de revista, currículos y tesis) y se compiló cada uno
+diez veces en una máquina virtual de dos procesadores virtuales y
+\SI{4}{GiB} de memoria. Las ejecuciones se dividieron en dos escenarios:
+
+\begin{itemize}
+  \item \textbf{Frío}: contenedor nuevo, sin archivos de formato
+    pregenerados ni caché de fuentes.
+  \item \textbf{Caliente}: imagen con los formatos de los tres motores y la
+    base de datos de fuentes de \texttt{luaotfload} generados durante la
+    construcción de la imagen.
+\end{itemize}
+
+Para cada ejecución se registró el tiempo de cada fase: creación del
+contenedor, carga del formato, pasadas del motor, procesamiento de la
+bibliografía y escritura de los artefactos.
+
+\section{Latencia}
+La tabla~\ref{tab:latencia} resume la latencia de extremo a extremo por tipo
+de documento. La creación del contenedor cuesta alrededor de \SI{1,1}{s}
+independientemente del documento, y el motor solo domina el tiempo total en
+documentos de más de cuarenta páginas.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Latencia de extremo a extremo en segundos (mediana / percentil 95).}
+  \label{tab:latencia}
+  \begin{tabular}{@{}lrrr@{}}
+    \toprule
+    Tipo de documento & Páginas & Frío & Caliente \\
+    \midrule
+    Artículo de congreso sin bibliografía & 4--6 & 5,8 / 7,9 & 2,9 / 3,6 \\
+    Artículo de congreso con \textsc{Bib}\TeX{} & 6--8 & 9,7 / 12,4 & 6,1 / 7,8 \\
+    Artículo de revista con biber & 10--14 & 14,2 / 18,0 & 10,5 / 12,9 \\
+    Currículo (fontspec, Lua\TeX{}) & 1--2 & 8,3 / 10,1 & 4,0 / 5,2 \\
+    Tesis & 80+ & 41,6 / 55,3 & 36,9 / 48,7 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+La figura~\ref{fig:latencia} muestra la latencia mediana en función del
+número de páginas para ambos escenarios. La diferencia entre las curvas se
+mantiene aproximadamente constante, lo que confirma que las optimizaciones
+actúan sobre el coste fijo de arranque y no sobre el tiempo de composición.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        width=0.85\textwidth, height=7cm,
+        xlabel={páginas}, ylabel={latencia mediana (s)},
+        xmin=0, xmax=60, ymin=0, ymax=30,
+        grid=major, grid style={gray!25},
+        legend pos=north west, legend style={font=\small},
+      ]
+      \addplot[color=acento, mark=square*, thick]
+        coordinates {(2,6.1) (6,7.4) (10,9.0) (20,13.2) (40,21.5) (60,29.0)};
+      \addplot[color=principal, mark=*, thick]
+        coordinates {(2,3.6) (6,4.7) (10,6.1) (20,10.3) (40,18.4) (60,26.1)};
+      \legend{frío, caliente}
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Latencia mediana de compilación según el número de páginas.}
+  \label{fig:latencia}
+\end{figure}
+
+\section{Comportamiento de la caché}
+Durante seis meses de operación, el 68~\% de las peticiones se resolvieron
+desde la caché. La tasa de aciertos varió notablemente según el tipo de
+cliente: las plataformas docentes que regeneran el PDF de una tarea en cada
+visita alcanzaron el 91~\%, mientras que los editores interactivos que
+compilan en cada pulsación se mantuvieron por debajo del 20~\%. La inclusión
+de la versión de la imagen en la ecuación~\eqref{eq:clave} provocó un vaciado
+completo de la caché en cada actualización de \TeX{} Live; la tasa de
+aciertos recuperó su valor habitual en unas 36 horas.
+
+\section{Análisis de fallos}
+De las compilaciones que no estaban en caché, el 11,4~\% terminó con error.
+Los diagnósticos atribuyeron el 54~\% de esos errores a archivos
+inexistentes referenciados con \verb|\includegraphics| o \verb|\input|, el
+23~\% a secuencias de control no definidas y el 9~\% a paquetes que requieren
+la ejecución de programas externos. Solo el 0,3~\% de las compilaciones fue
+interrumpido por el tiempo límite y ninguna superó los límites de memoria o
+de procesos una vez ajustados los valores de la tabla~\ref{tab:limites}.
+
+\section{Conclusiones}
+Los resultados permiten extraer tres conclusiones principales:
+
+\begin{enumerate}
+  \item En documentos breves, la sobrecarga de infraestructura pesa más que
+    la composición tipográfica; precalentar la imagen elimina la mayor parte
+    de ese coste.
+  \item Una caché direccionada por contenido resulta muy rentable porque las
+    cargas de trabajo reales vuelven a solicitar documentos sin cambios con
+    mucha más frecuencia de la que los modifican.
+  \item El aislamiento estricto no supuso un obstáculo en la práctica: menos
+    del 10~\% de los errores se debieron a funcionalidades prohibidas, y en
+    todos los casos existía una alternativa compatible.
+\end{enumerate}
+
+Como trabajo futuro se propone la compilación incremental por páginas y la
+transmisión de los diagnósticos mientras el motor sigue en ejecución, de
+forma que el usuario reciba el primer error antes de que termine la
+compilación completa \citep{knuth1986}.

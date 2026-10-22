@@ -1,0 +1,13 @@
+{
+  "id": "trifold-brochure",
+  "name": "Tri-fold brochure",
+  "description": "Six-panel tri-fold brochure on landscape A4 built with the leaflet class: front and back covers, schedule, map, process diagram and feature panels, all drawn with TikZ (no external images). Advertises a fictional workshop series.",
+  "category": "brochure",
+  "engine": "pdflatex",
+  "entrypoint": "brochure.tex",
+  "tags": ["brochure", "leaflet", "tri-fold", "tikz", "marketing"],
+  "license": "leaflet class: LPPL 1.3 (Jürgen Schlegelmilch, Rolf Niepraschk, Walter Schmidt). Template content: MIT.",
+  "source": "https://ctan.org/pkg/leaflet",
+  "variables": [],
+  "editable": ["brochure.tex"]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "cv-altacv",
+  "name": "AltaCV résumé",
+  "description": "Two-column résumé based on LianTze Lim's AltaCV class: header with contact icons, experience, projects, a wheel chart, achievements, skill tags, star ratings, education and referees. Compiles with pdfLaTeX.",
+  "category": "cv",
+  "engine": "pdflatex",
+  "entrypoint": "cv.tex",
+  "tags": ["cv", "resume", "altacv", "two-column", "fontawesome"],
+  "license": "altacv.cls v1.7.4: LaTeX Project Public License 1.3 or later (LianTze Lim). Sample layout: LPPL 1.3. Fonts Roboto (Apache 2.0) and Lato (SIL OFL 1.1) are loaded from TeX Live.",
+  "source": "https://github.com/liantze/AltaCV",
+  "variables": [],
+  "editable": ["cv.tex"]
+}

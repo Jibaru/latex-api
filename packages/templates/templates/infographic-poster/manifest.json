@@ -1,0 +1,13 @@
+{
+  "id": "infographic-poster",
+  "name": "Infographic poster (A0)",
+  "description": "Three-column A0 portrait poster built with tikzposter: custom color theme, pgfplots bar and line charts, a TikZ flow diagram, an object tree, TikZ-drawn icons and highlighted inner blocks. Explains how a LaTeX document becomes a PDF.",
+  "category": "poster",
+  "engine": "pdflatex",
+  "entrypoint": "poster.tex",
+  "tags": ["poster", "tikzposter", "a0", "infographic", "pgfplots", "tikz"],
+  "license": "tikzposter class: LPPL 1.3 (Pascal Richter, Elena Botoeva, Richard Barnard, Dirk Surmann). Template content: MIT.",
+  "source": "https://ctan.org/pkg/tikzposter",
+  "variables": [],
+  "editable": ["poster.tex"]
+}

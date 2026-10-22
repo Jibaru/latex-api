@@ -1,0 +1,18 @@
+{
+  "id": "report-es",
+  "name": "Informe técnico (español)",
+  "description": "Informe técnico en español con portada a color, resumen, índices, tres capítulos en archivos separados, figura y gráfico con TikZ/pgfplots, tablas booktabs, listado de código y bibliografía apalike. Usa babel spanish con es-tabla.",
+  "category": "report",
+  "engine": "pdflatex",
+  "entrypoint": "main.tex",
+  "tags": ["report", "spanish", "informe", "babel", "bibtex", "listings"],
+  "license": "Template content: MIT. Uses only standard LaTeX classes and packages (LPPL).",
+  "variables": [],
+  "editable": [
+    "main.tex",
+    "chapters/01-introduccion.tex",
+    "chapters/02-diseno.tex",
+    "chapters/03-resultados.tex",
+    "refs.bib"
+  ]
+}

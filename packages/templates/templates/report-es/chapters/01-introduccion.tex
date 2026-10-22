@@ -1,0 +1,45 @@
+\chapter{Introducción}
+\label{cap:introduccion}
+
+\section{Contexto}
+Los sistemas de composición tipográfica basados en \TeX{} siguen siendo la
+herramienta de referencia para publicar artículos científicos, tesis y
+documentación técnica \citep{lamport1994}. Sin embargo, instalar y mantener
+una distribución completa de \TeX{} Live exige varios gigabytes de disco y un
+conocimiento considerable de su ecosistema de paquetes. Para una organización
+que solo necesita transformar una plantilla y unos datos en un archivo PDF
+(por ejemplo, un sistema de generación de certificados o de informes
+periódicos), esa carga resulta desproporcionada.
+
+Durante los últimos años han aparecido editores en línea que centralizan la
+compilación \citep{overleaf2023}, pero sus componentes internos no se exponen
+como piezas reutilizables. Este informe estudia la compilación como un
+servicio independiente, sin estado, que recibe un conjunto de archivos y
+devuelve el PDF resultante junto con un diagnóstico estructurado de errores y
+advertencias.
+
+\section{Objetivos}
+El trabajo persigue tres objetivos concretos:
+
+\begin{enumerate}[label=\textbf{O\arabic*.}]
+  \item Diseñar un modelo de ejecución que permita compilar documentos de
+    origen no confiable en una infraestructura compartida sin comprometer el
+    servidor ni los datos de otros usuarios.
+  \item Garantizar que una misma entrada produzca siempre la misma salida
+    mientras no cambie la versión de la imagen de compilación.
+  \item Reducir la latencia percibida mediante una caché de artefactos que
+    evite recompilar documentos que no han cambiado.
+\end{enumerate}
+
+\section{Alcance y estructura del informe}
+El alcance se limita a los tres motores más utilizados (pdf\TeX{}, Xe\TeX{} y
+Lua\TeX{}) y al flujo de trabajo gestionado por \texttt{latexmk}. Quedan fuera
+del estudio las funcionalidades que requieren ejecutar programas externos
+durante la compilación, como \texttt{minted} o la externalización de figuras
+de TikZ, porque el modelo de aislamiento las prohíbe de forma deliberada.
+
+El resto del documento se organiza de la siguiente manera. El
+capítulo~\ref{cap:diseno} describe la arquitectura del servicio, el modelo de
+aislamiento y la clave de caché. El capítulo~\ref{cap:resultados} presenta la
+metodología de evaluación, los resultados obtenidos y las lecciones
+aprendidas durante seis meses de operación.

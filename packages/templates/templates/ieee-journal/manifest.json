@@ -1,0 +1,13 @@
+{
+  "id": "ieee-journal",
+  "name": "IEEE journal article",
+  "description": "IEEEtran journal article with running heads, drop-cap introduction, algorithm, TikZ flow diagram, pgfplots chart, booktabs table, appendix, BibTeX bibliography and author biographies.",
+  "category": "paper",
+  "engine": "pdflatex",
+  "entrypoint": "main.tex",
+  "tags": ["ieee", "journal", "paper", "bibtex", "biography"],
+  "license": "IEEEtran class: LPPL 1.3 (Michael Shell / IEEE). Template content: MIT.",
+  "source": "https://ctan.org/pkg/ieeetran",
+  "variables": [],
+  "editable": ["main.tex", "refs.bib"]
+}

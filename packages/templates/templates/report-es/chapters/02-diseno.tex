@@ -1,0 +1,119 @@
+\chapter{Diseño del servicio}
+\label{cap:diseno}
+
+\section{Arquitectura general}
+El servicio se compone de tres planos claramente separados: el plano de
+entrada, que valida y normaliza los proyectos recibidos; el plano de
+compilación, formado por contenedores efímeros; y el plano de almacenamiento,
+donde se guardan los artefactos generados. La figura~\ref{fig:arquitectura}
+muestra la relación entre ellos.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      font=\small, node distance=6mm and 10mm,
+      caja/.style={draw, rounded corners=2pt, minimum width=28mm, minimum height=10mm,
+                   align=center, fill=white, thick},
+      flecha/.style={-{Latex[length=2.5mm]}, thick},
+    ]
+    \node[caja] (cliente) {Cliente\\(SDK o CLI)};
+    \node[caja, right=of cliente, fill=principal!10] (api) {API};
+    \node[caja, right=of api, fill=acento!15] (cache) {Caché de\\artefactos};
+    \node[caja, below=of api, fill=green!10] (worker) {Trabajador};
+    \node[caja, right=of worker, fill=red!8] (sandbox) {Contenedor\\aislado};
+    \node[caja, below=of worker, fill=gray!10] (almacen) {Almacén\\de archivos};
+    \draw[flecha] (cliente) -- node[above]{proyecto} (api);
+    \draw[flecha] (api) -- node[above]{hash} (cache);
+    \draw[flecha] (api) -- node[left]{fallo de caché} (worker);
+    \draw[flecha] (worker) -- node[above]{lanza} (sandbox);
+    \draw[flecha] (sandbox) |- node[pos=0.75, below]{PDF y registro} (almacen);
+    \draw[flecha] (almacen) -- (worker);
+    \draw[flecha, dashed] (cache) |- (almacen);
+    \begin{scope}[on background layer]
+      \node[fit=(worker)(sandbox)(almacen), draw=gray!60, dashed, rounded corners,
+            inner sep=4pt, label={[gray]below:plano de compilación}] {};
+    \end{scope}
+  \end{tikzpicture}
+  \caption{Arquitectura del servicio. El plano de compilación no tiene acceso a
+    la red ni a los datos de otros usuarios.}
+  \label{fig:arquitectura}
+\end{figure}
+
+Cada petición se procesa en cuatro pasos. Primero, la API comprueba los
+límites de tamaño y rechaza rutas peligrosas (referencias al directorio
+superior, rutas absolutas o enlaces simbólicos). Segundo, calcula un resumen
+criptográfico del proyecto normalizado. Tercero, consulta la caché y, si
+existe un artefacto para ese resumen, lo devuelve de inmediato. Cuarto, en
+caso contrario, un trabajador lanza un contenedor, ejecuta la compilación y
+almacena el resultado.
+
+\section{Modelo de aislamiento}
+Un documento \LaTeX{} es, en la práctica, un programa: puede leer y escribir
+archivos, consumir memoria sin límite y, si el intérprete lo permite,
+ejecutar órdenes del sistema. Por ello cada compilación se ejecuta en un
+contenedor nuevo con las restricciones de la tabla~\ref{tab:limites}.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Límites aplicados a cada compilación.}
+  \label{tab:limites}
+  \begin{tabular}{@{}llr@{}}
+    \toprule
+    Recurso & Mecanismo & Límite \\
+    \midrule
+    Tiempo de pared & \texttt{timeout -s KILL} & \SI{60}{s} (síncrono) / \SI{300}{s} (asíncrono) \\
+    Memoria & cgroup v2 & \SI{2}{GiB} \\
+    Procesadores & cgroup v2 & 2 vCPU \\
+    Procesos & \texttt{pids.max} & 64 \\
+    Red & espacio de nombres & ninguna \\
+    Llamadas al sistema & seccomp & lista blanca \\
+    Ejecución de programas & \texttt{shell\_escape = f} & deshabilitada \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Además de los límites de recursos, el sistema de archivos raíz del contenedor
+es de solo lectura y el directorio de trabajo se monta en memoria. La opción
+\texttt{openout\_any = p} del archivo \texttt{texmf.cnf} impide que el motor
+escriba fuera de ese directorio, y \texttt{-no-shell-escape} refuerza en la
+línea de órdenes la prohibición ya establecida en la configuración.
+
+\section{Clave de caché}
+Sea $B = \{(p_i, b_i)\}_{i=1}^{n}$ el conjunto de archivos del proyecto, donde
+$p_i$ es la ruta relativa normalizada y $b_i$ su contenido en bytes. Dado el
+motor $e$ y la versión de la imagen $v$, la clave de caché se define como
+\begin{equation}
+  \kappa(B, e, v) = H\Big( e \,\|\, v \,\|\, \big\Vert_{i=1}^{n}
+    \big(|p_i| \,\|\, p_i \,\|\, |b_i| \,\|\, b_i\big) \Big),
+  \label{eq:clave}
+\end{equation}
+donde $H$ es SHA-256 y $\Vert$ denota la concatenación con prefijos de
+longitud. Incluir $v$ en la clave garantiza que una actualización de
+\TeX{} Live invalide los artefactos antiguos, que son la principal fuente de
+resultados no reproducibles en proyectos de larga duración.
+
+\section{Interfaz de programación}
+El listado~\ref{lst:peticion} muestra una petición mínima al servicio. El
+cuerpo contiene los archivos del proyecto codificados como texto y el nombre
+del archivo principal; la respuesta es el PDF o, si se solicita mediante la
+cabecera \texttt{Accept}, un objeto JSON con los diagnósticos.
+
+\begin{lstlisting}[language=bash, caption={Petición de compilación con curl.}, label={lst:peticion}]
+curl -X POST https://latex-api.example/v1/compile \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "engine": "pdflatex",
+        "entrypoint": "main.tex",
+        "files": [
+          { "path": "main.tex", "content": "\\documentclass{article}..." }
+        ]
+      }' \
+  -o salida.pdf
+\end{lstlisting}
+
+Cuando la compilación falla, el servicio devuelve un documento de problema
+conforme a RFC~9457 con el código \texttt{compile\_failed} y la lista de
+diagnósticos, cada uno con su archivo, línea y mensaje. De este modo el
+cliente puede señalar el error directamente en el editor sin analizar el
+registro completo del motor.

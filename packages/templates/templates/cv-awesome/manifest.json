@@ -1,0 +1,19 @@
+{
+  "id": "cv-awesome",
+  "name": "Awesome-CV résumé",
+  "description": "One-page résumé based on posquit0's Awesome-CV class with a centred header, social links, summary, experience, skills and education sections split into separate files. Requires LuaLaTeX.",
+  "category": "cv",
+  "engine": "lualatex",
+  "entrypoint": "cv.tex",
+  "tags": ["cv", "resume", "awesome-cv", "lualatex", "fontspec"],
+  "license": "awesome-cv.cls: LaTeX Project Public License 1.3c (Claud D. Park). Example layout: CC BY-SA 4.0. Fonts Source Sans 3 and Roboto are loaded from TeX Live (SIL OFL 1.1 / Apache 2.0).",
+  "source": "https://github.com/posquit0/Awesome-CV",
+  "variables": [],
+  "editable": [
+    "cv.tex",
+    "sections/summary.tex",
+    "sections/experience.tex",
+    "sections/skills.tex",
+    "sections/education.tex"
+  ]
+}

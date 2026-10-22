@@ -1,0 +1,170 @@
+% !TEX program = pdflatex
+% AltaCV résumé template (https://github.com/liantze/AltaCV), class v1.7.4 by
+% LianTze Lim, LPPL 1.3 or later. Adapted from the upstream sample.tex: the photo
+% and the publication list were removed so the project is fully self-contained.
+% Compiles with pdfLaTeX (fonts Roboto and Lato come from TeX Live).
+\documentclass[10pt,a4paper,withhyper]{altacv}
+
+% Page layout
+\geometry{left=1.25cm,right=1.25cm,top=1.5cm,bottom=1.5cm,columnsep=1.2cm}
+
+% The paracol package lets you typeset columns of text in parallel
+\usepackage{paracol}
+
+% Fonts (pdflatex: Type 1 versions of Roboto and Lato shipped with TeX Live)
+\usepackage[rm]{roboto}
+\usepackage[defaultsans]{lato}
+\renewcommand{\familydefault}{\sfdefault}
+
+% Colours
+\definecolor{SlateGrey}{HTML}{2E2E2E}
+\definecolor{LightGrey}{HTML}{666666}
+\definecolor{DarkTeal}{HTML}{0B4F6C}
+\definecolor{Teal}{HTML}{01BAEF}
+\definecolor{Sand}{HTML}{E7D192}
+\colorlet{name}{black}
+\colorlet{tagline}{DarkTeal}
+\colorlet{heading}{DarkTeal}
+\colorlet{headingrule}{Sand}
+\colorlet{subheading}{DarkTeal}
+\colorlet{accent}{DarkTeal}
+\colorlet{emphasis}{SlateGrey}
+\colorlet{body}{LightGrey}
+
+% Fonts for the different elements
+\renewcommand{\namefont}{\Huge\rmfamily\bfseries}
+\renewcommand{\personalinfofont}{\footnotesize}
+\renewcommand{\cvsectionfont}{\LARGE\rmfamily\bfseries}
+\renewcommand{\cvsubsectionfont}{\large\bfseries}
+
+% Bullets and rating marker
+\renewcommand{\cvItemMarker}{{\small\textbullet}}
+\renewcommand{\cvRatingMarker}{\faCircle}
+
+\begin{document}
+\name{Alex Rivera}
+\tagline{Senior Software Engineer -- Platform \& Infrastructure}
+
+\personalinfo{%
+  \email{alex.rivera@example.com}
+  \phone{+51 900 000 000}
+  \location{Lima, Peru}
+  \homepage{alexrivera.example.com}
+  \linkedin{alex-rivera-example}
+  \github{alex-rivera-example}
+  %% Add your own fields with \printinfo{symbol}{detail}[optional hyperlink prefix]
+  % \printinfo{\faPaw}{Hey ho!}[https://example.com/]
+}
+
+\makecvheader
+
+%% Left/right column width ratio
+\columnratio{0.6}
+
+\begin{paracol}{2}
+
+\cvsection{Experience}
+
+\cvevent{Senior Software Engineer, Platform}{Northwind Technologies}{Mar 2022 -- Ongoing}{Lima, Peru (remote)}
+\begin{itemize}
+\item Designed and operated the internal build platform used by 120 engineers, running 15k isolated build jobs per day.
+\item Introduced content-addressed caching for build artifacts, cutting median CI time from 14 to 6 minutes and infrastructure cost by 31\%.
+\end{itemize}
+
+\divider
+
+\cvevent{Software Engineer}{Contoso Payments}{Jun 2018 -- Feb 2022}{Santiago, Chile}
+\begin{itemize}
+\item Led the migration of a monolithic payments backend to 40 services on Kubernetes with zero customer-facing downtime.
+\item Built the settlement reporting pipeline (Go, PostgreSQL, Kafka) reconciling 2M transactions per day.
+\end{itemize}
+
+\divider
+
+\cvevent{Backend Developer}{Fabrikam Studio}{Jan 2016 -- May 2018}{Lima, Peru}
+\begin{itemize}
+\item Developed REST APIs in Node.js and Python for e-commerce clients handling 3k requests per second at peak.
+\item Set up the agency's first continuous delivery pipeline with Docker and automated migrations.
+\end{itemize}
+
+\cvsection{Projects}
+
+\cvevent{Open-source \LaTeX{} compilation service}{Personal project}{2025 -- Ongoing}{}
+\begin{itemize}
+\item HTTP API that compiles \LaTeX{} projects inside sandboxed containers, with a content-addressed cache and structured diagnostics.
+\end{itemize}
+
+\medskip
+
+\cvsection{A Day of My Life}
+
+% \wheelchart{outer radius}{inner radius}{
+% comma-separated list of value/text width/color/detail}
+\wheelchart{1.5cm}{0.5cm}{%
+  7/8em/accent!30/{Sleep,\\restful sleep},
+  2/8em/accent!40/Reading and writing,
+  8/8em/accent!60/Platform engineering,
+  2/10em/accent/Cycling,
+  5/6em/accent!20/Family time
+}
+
+%% Switch to the right column
+\switchcolumn
+
+\cvsection{Most Proud of}
+
+\cvachievement{\faTrophy}{Zero-downtime migration}{40 services moved to Kubernetes without a single customer-facing incident}
+
+\divider
+
+\cvachievement{\faChartLine}{31\% lower cloud bill}{through artifact caching and right-sizing of build runners}
+
+\divider
+
+\cvachievement{\faUsers}{Mentoring}{Four engineers mentored through promotion in two years}
+
+\cvsection{Strengths}
+
+\cvtag{Build systems}
+\cvtag{Kubernetes}\\
+\cvtag{Observability}
+\cvtag{Incident response}
+
+\divider\smallskip
+
+\cvtag{Go}
+\cvtag{TypeScript}
+\cvtag{Python}\\
+\cvtag{PostgreSQL}
+\cvtag{Terraform}
+
+\cvsection{Languages}
+
+\cvskill{Spanish}{5}
+\divider
+
+\cvskill{English}{4.5}
+\divider
+
+\cvskill{Portuguese}{3} %% Supports X.5 values.
+
+\medskip
+
+\cvsection{Education}
+
+\cvevent{B.Sc.\ in Systems Engineering}{Universidad Nacional de Ejemplo}{Mar 2011 -- Dec 2015}{}
+Thesis: distributed job scheduling for heterogeneous clusters.
+
+\divider
+
+\cvevent{Certified Kubernetes Administrator}{Cloud Native Computing Foundation}{2021}{}
+
+\cvsection{Referees}
+
+% \cvref{name}{email}{mailing address}
+\cvref{Dr.\ Jordan Lee}{Example Labs}{jordan.lee@example.org}
+{Platform Engineering, Berlin, Germany}
+
+\end{paracol}
+
+\end{document}
