@@ -23,9 +23,11 @@ RUN set -eux; \
     rm -rf /tmp/install-tl /tmp/texlive.profile
 
 # ---- Extra collections and packages for the target document types.
+# tlmgr updates itself first: the base layer may be cached from an older tlmgr than the mirror requires.
 # NEVER add collection-publishers or collection-fontsextra: they pull 2+ GB of fonts.
 RUN set -eux; \
     tlmgr option repository "${TEXLIVE_MIRROR}"; \
+    tlmgr update --self; \
     tlmgr install \
       collection-pictures collection-latexextra collection-bibtexextra collection-luatex \
       collection-fontsrecommended collection-langspanish collection-mathscience collection-binextra \
