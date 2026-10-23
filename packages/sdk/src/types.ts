@@ -63,6 +63,8 @@ export interface CompilePdfResult {
   jobId: string;
   cached: boolean;
   warnings: number;
+  /** Server time spent compiling for this request; 0 when served from cache. */
+  compileMs: number;
   job?: undefined;
 }
 

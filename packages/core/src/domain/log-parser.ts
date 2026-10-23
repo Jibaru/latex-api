@@ -18,6 +18,8 @@ const RUNAWAY = /^Runaway argument\?/;
 const NO_PAGES = /^No pages of output\.?$/;
 const BIBER_ERROR = /^(?:ERROR|WARN) - (.+)$/;
 const LATEXMK_ERROR = /^Latexmk: (.+)$/;
+/** Warnings caused by the sandbox itself (shell escape is always off): reported as info. */
+const SANDBOX_NOTICES = [/shell escape feature is not enabled/i];
 
 /**
  * Parses a LaTeX log (ideally produced with `-file-line-error`) into structured diagnostics.
@@ -29,8 +31,12 @@ export function parseLatexLog(log: string, maxDiagnostics = 200): Diagnostic[] {
   const fileStack: string[] = [];
   const seen = new Set<string>();
 
-  const push = (d: Diagnostic) => {
+  const push = (raw: Diagnostic) => {
     if (diagnostics.length >= maxDiagnostics) return;
+    const d: Diagnostic =
+      raw.severity === "warning" && SANDBOX_NOTICES.some((re) => re.test(raw.message))
+        ? { ...raw, severity: "info" }
+        : raw;
     const key = `${d.severity}|${d.file ?? ""}|${d.line ?? ""}|${d.message}`;
     if (seen.has(key)) return;
     seen.add(key);

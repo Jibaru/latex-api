@@ -105,7 +105,10 @@ export interface CompileData {
   entrypoint?: string;
   job: Job | { id: string; status: "succeeded"; cached: boolean; warnings: number };
   pdf: { path: string; bytes: number };
-  durationMs: number;
+  /** Server time spent compiling for this request; 0 when the result came from cache. */
+  compileMs: number;
+  /** Wall-clock time of the whole command: pack, upload, compile or cache hit, download. */
+  totalMs: number;
 }
 
 /** Extracts the byte limit from problem details such as "Request body exceeds 52428800 bytes". */
@@ -209,7 +212,8 @@ export async function compileOnce(app: AppContext, opts: CompileOnceOptions): Pr
         entrypoint: project.entrypoint,
         job,
         pdf: { path: project.outputPath, bytes: pdf.byteLength },
-        durationMs: Date.now() - startedAt,
+        compileMs: job.result?.cached ? 0 : (job.result?.durationMs ?? 0),
+        totalMs: Date.now() - startedAt,
       };
     }
     const result = await api.compile(input);
@@ -231,7 +235,8 @@ export async function compileOnce(app: AppContext, opts: CompileOnceOptions): Pr
         warnings: result.warnings,
       },
       pdf: { path: project.outputPath, bytes: result.pdf.byteLength },
-      durationMs: Date.now() - startedAt,
+      compileMs: result.compileMs,
+      totalMs: Date.now() - startedAt,
     };
   } catch (error) {
     status.fail("Compilation failed");
@@ -255,7 +260,7 @@ export function renderCompile(data: CompileData): void {
   const parts = [
     c.bold(relativeToCwd(data.pdf.path)),
     formatBytes(data.pdf.bytes),
-    formatDuration(data.durationMs),
+    formatDuration(data.totalMs),
   ];
   if (cached) parts.push(c.info("cached"));
   if (warnings > 0) parts.push(c.warn(plural(warnings, "warning")));
@@ -277,8 +282,13 @@ export const compileCommand = leaf({
   contract: {
     data: t.object({
       job: t.ref("Job"),
+      jobId: t.string(),
+      "entrypoint?": t.string(),
       pdf: pdfShape,
-      durationMs: t.number(),
+      compileMs: t.number(
+        "Server time spent compiling; 0 when served from cache (see job.result.cached)",
+      ),
+      totalMs: t.number("Wall-clock time of the command, including upload and download"),
     }),
     exitCodes: [EXIT.OK, EXIT.COMPILE_FAILED, EXIT.USAGE, EXIT.AUTH, EXIT.CONFLICT],
     auth: "required",

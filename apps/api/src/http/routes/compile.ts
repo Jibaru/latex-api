@@ -74,6 +74,11 @@ export const compileRoute = createRoute({
         "X-Job-Id": z.string(),
         "X-Compile-Cached": z.string(),
         "X-Compile-Warnings": z.string(),
+        "X-Compile-Duration-Ms": z
+          .string()
+          .openapi({
+            description: "Time spent compiling for this request; 0 when served from cache",
+          }),
       }),
     },
     400: {
@@ -202,6 +207,7 @@ export async function respondSync(c: Context<Env>, job: CompileJob): Promise<Res
     "X-Job-Id": job.id,
     "X-Compile-Cached": String(job.result?.cached ?? false),
     "X-Compile-Warnings": String(job.result?.warnings ?? 0),
+    "X-Compile-Duration-Ms": String(job.result?.cached ? 0 : (job.result?.durationMs ?? 0)),
   };
 
   if (job.status === "succeeded" && job.result?.pdfKey) {

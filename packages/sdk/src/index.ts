@@ -594,6 +594,7 @@ export class LatexApi {
       jobId: response.headers.get("x-job-id") ?? "",
       cached: response.headers.get("x-compile-cached") === "true",
       warnings: Number(response.headers.get("x-compile-warnings") ?? 0) || 0,
+      compileMs: Number(response.headers.get("x-compile-duration-ms") ?? 0) || 0,
     };
   }
 

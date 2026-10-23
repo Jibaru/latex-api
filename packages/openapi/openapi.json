@@ -2023,6 +2023,14 @@
                   "type": "string"
                 },
                 "required": true
+              },
+              "X-Compile-Duration-Ms": {
+                "schema": {
+                  "type": "string",
+                  "description": "Time spent compiling for this request; 0 when served from cache"
+                },
+                "required": true,
+                "description": "Time spent compiling for this request; 0 when served from cache"
               }
             },
             "content": {

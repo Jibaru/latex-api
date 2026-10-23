@@ -78,4 +78,12 @@ describe("parseLatexLog", () => {
     expect(d[0]).toMatchObject({ severity: "error", source: "biber" });
     expect(d[1]).toMatchObject({ severity: "error", source: "latexmk" });
   });
+
+  it("reports sandbox-induced shell escape warnings as info", () => {
+    const log = "(./main.tex\nPackage epstopdf Warning: Shell escape feature is not enabled.\n)";
+    const d = parseLatexLog(log);
+    expect(d).toHaveLength(1);
+    expect(d[0]).toMatchObject({ severity: "info", source: "epstopdf" });
+    expect(summarizeDiagnostics(d)).toMatchObject({ warnings: 0, infos: 1 });
+  });
 });
