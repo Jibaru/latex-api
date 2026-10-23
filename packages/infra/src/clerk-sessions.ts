@@ -31,8 +31,14 @@ export class ClerkSessionVerifier implements SessionVerifier {
           ? this.opts.authorizedParties
           : undefined,
       });
-      if (result.errors || !result.data) return null;
-      const sub = (result.data as { sub?: unknown }).sub;
+      // Depending on the SDK version verifyToken returns the payload or `{ data, errors }`.
+      const shaped = result as unknown as {
+        data?: { sub?: unknown };
+        errors?: unknown[];
+        sub?: unknown;
+      };
+      if (shaped.errors?.length) return null;
+      const sub = shaped.data ? shaped.data.sub : shaped.sub;
       const userId = typeof sub === "string" ? sub : undefined;
       if (!userId) return null;
       return { id: userId, email: await this.email(userId) };

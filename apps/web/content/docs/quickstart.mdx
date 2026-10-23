@@ -3,7 +3,7 @@ title: Quickstart
 description: Compile a document in under a minute with curl, then with the SDK and the CLI.
 ---
 
-You need an API key from the operator of the instance you are using. Put it in `LATEX_API_KEY`.
+[Create a free account](/sign-up), then create a personal token under [Dashboard → API tokens](/dashboard/tokens) and put it in `LATEX_API_TOKEN`. With the CLI you can skip that step: `latex-api auth login` signs you in through the browser.
 
 ## 1. curl
 
@@ -20,7 +20,7 @@ Send it as the raw body and save the PDF:
 
 ```bash
 curl https://latex-api.crafter.run/v1/compile \
-  -H "Authorization: Bearer $LATEX_API_KEY" \
+  -H "Authorization: Bearer $LATEX_API_TOKEN" \
   -H "Content-Type: text/x-tex" \
   --data-binary @main.tex \
   -o main.pdf
@@ -38,7 +38,7 @@ If LaTeX reports errors you get `422` with diagnostics instead. Add `-w '%{http_
 
 ```bash
 curl https://latex-api.crafter.run/v1/compile \
-  -H "Authorization: Bearer $LATEX_API_KEY" \
+  -H "Authorization: Bearer $LATEX_API_TOKEN" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -d '{"files":[{"path":"main.tex","content":"\\documentclass{article}\\begin{document}Hello\\end{document}"}]}'
@@ -80,7 +80,7 @@ import { LatexApi } from "@jibaru/latex-api-sdk";
 import { readFile, writeFile } from "node:fs/promises";
 
 const api = new LatexApi({
-  apiKey: process.env.LATEX_API_KEY!,
+  apiKey: process.env.LATEX_API_TOKEN!,
   baseUrl: "https://latex-api.crafter.run",
 });
 
@@ -105,13 +105,13 @@ More in [SDK](/docs/sdk).
 ## 3. CLI
 
 ```bash
-npx @jibaru/latex-api-cli login            # stores the key and URL in ~/.config/latex-api/config.json
+npx @jibaru/latex-api-cli auth login       # approve in the browser; the token goes to your OS keychain
 npx @jibaru/latex-api-cli compile ./paper  # zips the folder, uploads it, writes paper.pdf
 npx @jibaru/latex-api-cli compile ./paper --watch
 ```
 
 `--watch` recompiles on every save and streams the compiler log over SSE. More in [CLI](/docs/cli).
 
-## Without a key
+## Without an account
 
-The landing page [playground](/#playground) calls `POST /v1/demo/compile`, which needs no key but is limited to small single-file documents and a few compiles per minute. It is meant for trying things, not for production.
+The landing page [playground](/#playground) calls `POST /v1/demo/compile`, which needs no account but is limited to small single-file documents and a few compiles per minute. It is meant for trying things, not for production.

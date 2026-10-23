@@ -12,6 +12,8 @@
     "postinstall": "fumadocs-mdx"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.9.19",
+    "@clerk/ui": "^1.41.1",
     "@codemirror/language": "^6.11.0",
     "@codemirror/legacy-modes": "^6.5.5",
     "@codemirror/state": "^6.5.0",
@@ -28,6 +30,7 @@
     "next-themes": "^0.4.6",
     "react": "19.3.1",
     "react-dom": "19.3.1",
+    "server-only": "^0.0.1",
     "shiki": "^4.5.0"
   },
   "devDependencies": {

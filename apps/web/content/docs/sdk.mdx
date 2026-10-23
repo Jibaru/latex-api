@@ -15,7 +15,7 @@ The package is ESM-only, ships types, and works on Node 20+, Bun, Deno and moder
 import { LatexApi } from "@jibaru/latex-api-sdk";
 
 const api = new LatexApi({
-  apiKey: process.env.LATEX_API_KEY!,          // sent as Authorization: Bearer
+  apiKey: process.env.LATEX_API_TOKEN!,          // sent as Authorization: Bearer
   baseUrl: "https://latex-api.crafter.run",    // default
 });
 ```

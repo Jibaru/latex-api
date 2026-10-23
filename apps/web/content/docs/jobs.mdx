@@ -9,7 +9,7 @@ description: Create a job, poll it, stream events over SSE or receive a webhook,
 
 ```bash
 curl -i https://latex-api.crafter.run/v1/jobs \
-  -H "Authorization: Bearer $LATEX_API_KEY" \
+  -H "Authorization: Bearer $LATEX_API_TOKEN" \
   -H "Content-Type: application/zip" \
   --data-binary @thesis.zip
 ```
@@ -67,7 +67,7 @@ Options are those of a compile plus `webhookUrl`:
 
 ```bash
 curl https://latex-api.crafter.run/v1/jobs/9b8d0f5c-1c3a-4d5e-9a2f-6f2a7c1e3b44 \
-  -H "Authorization: Bearer $LATEX_API_KEY"
+  -H "Authorization: Bearer $LATEX_API_TOKEN"
 ```
 
 Returns the same envelope. When terminal, `result` carries `diagnostics`, `errors`, `warnings`, `durationMs`, `pages`, `pdfBytes`, `pdfUrl` and `logUrl`; a failed job also has `error: { reason, message }`. Unknown ids (or ids created by another key) return `404 job_not_found`.
@@ -76,7 +76,7 @@ Returns the same envelope. When terminal, `result` carries `diagnostics`, `error
 
 ```bash
 curl -N https://latex-api.crafter.run/v1/jobs/9b8d0f5c-1c3a-4d5e-9a2f-6f2a7c1e3b44/events \
-  -H "Authorization: Bearer $LATEX_API_KEY"
+  -H "Authorization: Bearer $LATEX_API_TOKEN"
 ```
 
 The response is `text/event-stream`. Each event's `data` is a JSON object with `type`, `jobId` and `at`:
@@ -142,7 +142,7 @@ When `options.webhookUrl` is set, the server POSTs once at the end:
 
 ```bash
 curl -X DELETE https://latex-api.crafter.run/v1/jobs/9b8d0f5c-1c3a-4d5e-9a2f-6f2a7c1e3b44 \
-  -H "Authorization: Bearer $LATEX_API_KEY"
+  -H "Authorization: Bearer $LATEX_API_TOKEN"
 ```
 
 Returns `200` with the job (`status: "cancelled"`) when it was queued or running, and `409 job_not_cancellable` when it had already finished. A running compile's container is killed.

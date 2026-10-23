@@ -41,7 +41,7 @@ Content-Type: multipart/form-data
 
 ```bash
 curl https://latex-api.crafter.run/v1/compile \
-  -H "Authorization: Bearer $LATEX_API_KEY" \
+  -H "Authorization: Bearer $LATEX_API_TOKEN" \
   -F "files=@main.tex" \
   -F "files=@sections/intro.tex;filename=sections/intro.tex" \
   -F "files=@refs.bib" \
@@ -55,7 +55,7 @@ curl https://latex-api.crafter.run/v1/compile \
 
 ```bash
 curl https://latex-api.crafter.run/v1/compile \
-  -H "Authorization: Bearer $LATEX_API_KEY" \
+  -H "Authorization: Bearer $LATEX_API_TOKEN" \
   -F "project=@paper.zip" \
   -F 'options={"bibliography":"biber"}' \
   -o paper.pdf
@@ -70,7 +70,7 @@ Content-Type: application/zip
 
 ```bash
 curl "https://latex-api.crafter.run/v1/compile?engine=lualatex&entrypoint=cv.tex" \
-  -H "Authorization: Bearer $LATEX_API_KEY" \
+  -H "Authorization: Bearer $LATEX_API_TOKEN" \
   -H "Content-Type: application/zip" \
   --data-binary @cv.zip \
   -o cv.pdf

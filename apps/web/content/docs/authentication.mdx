@@ -1,21 +1,80 @@
 ---
 title: Authentication
-description: API keys, public endpoints and the per-key rate limits.
+description: Accounts, personal API tokens, CLI sign-in, public endpoints and rate limits.
 ---
 
-## Sending a key
+## Accounts
 
-Every route under `/v1` except the public ones below requires an API key. Send it either as a bearer token or in `X-API-Key`; both are equivalent.
+Anyone can [create an account](/sign-up) with GitHub, Google or an email address. Signing in gives you a [dashboard](/dashboard) where you manage personal API tokens, approve CLI sign-ins and see your recent jobs.
+
+## Personal API tokens
+
+Every authenticated route takes a personal token. Tokens look like `lta_Ab12Cd34_…` and act as you: jobs they create are yours, and rate limits count against your account.
+
+Send the token as a bearer token or in `X-API-Key`; both are equivalent.
 
 ```http
-Authorization: Bearer sk_live_...
+Authorization: Bearer lta_Ab12Cd34_...
 ```
 
-```http
-X-API-Key: sk_live_...
+A token works **until you revoke it**, or until the expiry you chose when you created it (7, 30, 90 or 365 days). Only a SHA-256 hash is stored; the secret is shown once, right after creation. Revoking takes effect immediately.
+
+There are three ways to get one:
+
+| How | Best for |
+| --- | --- |
+| [Dashboard → API tokens](/dashboard/tokens) | CI, servers, scripts |
+| `latex-api auth login` | Your own machine (see below) |
+| `POST /v1/tokens` with an existing token | Automation that rotates its own tokens |
+
+### Managing tokens over the API
+
+```bash
+# Who am I?
+curl https://latex-api.crafter.run/v1/me -H "Authorization: Bearer $LATEX_API_TOKEN"
+
+# List, create, revoke
+curl https://latex-api.crafter.run/v1/tokens -H "Authorization: Bearer $LATEX_API_TOKEN"
+curl -X POST https://latex-api.crafter.run/v1/tokens \
+  -H "Authorization: Bearer $LATEX_API_TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"nightly build","expiresInDays":30}'
+curl -X DELETE https://latex-api.crafter.run/v1/tokens/tok_... -H "Authorization: Bearer $LATEX_API_TOKEN"
 ```
 
-A missing or unknown key gets `401` with code `unauthorized`:
+`POST /v1/tokens` returns `{ "token": "lta_…", "apiToken": { … } }`. Store `token` right away; it is never returned again. A user can hold up to 25 active tokens.
+
+## Signing the CLI in
+
+`latex-api auth login` uses a device flow, the same pattern as `gh auth login`:
+
+1. The CLI calls `POST /v1/auth/device` and prints a code such as `WDJB-MJHT`.
+2. Your browser opens `https://latex-api.crafter.run/cli/authorize?code=WDJB-MJHT`. Sign in if needed, check that the code and machine match, pick a lifetime and click **Authorize**.
+3. The CLI polls `POST /v1/auth/device/token` and receives a personal token, which it stores in your OS keychain.
+
+Codes expire after 10 minutes and can be used once. Approval only works from a signed-in browser session; a token cannot approve another device. CLI sign-ins show up under API tokens as "CLI on <hostname>", where you can revoke them.
+
+For headless machines, create a token in the dashboard and pipe it in:
+
+```bash
+echo "$LATEX_API_TOKEN" | latex-api auth login --with-token
+```
+
+### Device flow for your own clients
+
+| Call | Response |
+| --- | --- |
+| `POST /v1/auth/device` `{clientName?, hostname?, platform?}` | `{deviceCode, userCode, verificationUri, verificationUriComplete, expiresIn, interval}` |
+| `POST /v1/auth/device/token` `{deviceCode}` | `200 {token, tokenId, name, expiresAt?, user}` once approved |
+
+While waiting, the token call answers `428` with code `authorization_pending` (or `slow_down`, then wait `interval + 2` seconds). It answers `400 access_denied` if the user clicked Deny and `400 expired_token` when the code expired or was already used.
+
+## Operator keys
+
+Self-hosted instances can also define static keys in the `API_KEYS` environment variable (`name:secret,name2:secret2`). They are meant for the operator: they compile, but they cannot create personal tokens. Instances without Clerk configured run on operator keys only. See [self-hosting](/docs/self-hosting).
+
+## Errors
+
+A missing, unknown, expired or revoked credential gets `401` with code `unauthorized`:
 
 ```json
 {
@@ -28,49 +87,30 @@ A missing or unknown key gets `401` with code `unauthorized`:
 }
 ```
 
-## How keys are issued
-
-There is no sign-up. The operator of an instance defines keys in the `API_KEYS` environment variable as a comma-separated list of `name:secret` pairs:
-
-```bash
-API_KEYS="alice:sk_live_8f3a...,ci:sk_live_02c1..."
-```
-
-The name identifies the key in logs and in the `createdBy` of jobs; the secret is what you send. Jobs are scoped to the key that created them: another key gets `404 job_not_found` for your job ids.
-
-To use the public instance, ask the maintainer on [GitHub](https://github.com/jibaru/latex-api) for a key, or [self-host](/docs/self-hosting) and mint your own.
+Using an operator key on a personal-token endpoint returns `403 forbidden`.
 
 ## Public endpoints
 
-These need no key:
+These need no credential:
 
-| Route                                | Purpose                               |
-| ------------------------------------ | ------------------------------------- |
-| `GET /health`                        | Health check                          |
-| `GET /openapi.json`                  | OpenAPI 3.1 document                  |
-| `GET /v1/limits`                     | Effective limits of this instance     |
-| `GET /v1/templates` and sub-routes   | Catalog, files, archive, preview      |
-| `POST /v1/demo/compile`              | Playground compile, rate limited by IP |
-
-`POST /v1/templates/:id/compile` and `/jobs` do need a key.
+| Route | Purpose |
+| --- | --- |
+| `GET /health` | Health check |
+| `GET /openapi.json` | OpenAPI 3.1 document |
+| `GET /v1/limits` | Effective limits of this instance |
+| `GET /v1/templates` and sub-routes | Catalog, files, archive, preview |
+| `POST /v1/demo/compile` | Playground compile, rate limited by IP |
+| `POST /v1/auth/device`, `POST /v1/auth/device/token` | CLI sign-in |
 
 ## Rate limits
 
-Per key, by default:
+Per account, by default:
 
 - **60 compiles per rolling hour** (`RATE_LIMIT_PER_KEY_PER_HOUR`)
 - **5 compiles running at the same time** (`RATE_LIMIT_CONCURRENT_PER_KEY`)
 
-Over the limit you receive `429 rate_limited` with a `Retry-After` header in seconds:
-
-```http
-HTTP/1.1 429 Too Many Requests
-Content-Type: application/problem+json
-Retry-After: 37
-```
-
-The demo endpoint is limited per IP address instead: 5 compiles a minute and 30 a day.
+All your tokens share these limits. Over the limit you receive `429 rate_limited` with a `Retry-After` header in seconds. The demo endpoint is limited per IP address instead: 5 compiles a minute and 30 a day. Starting CLI sign-ins is limited to 20 per hour per IP.
 
 ## CORS
 
-CORS is enabled for every origin on `/v1`, with `Authorization`, `Content-Type`, `Accept` and `X-API-Key` allowed and `X-Job-Id`, `X-Compile-Cached`, `X-Compile-Warnings`, `Location` and `Retry-After` exposed. Calling the API from a browser works, but remember a key in browser code is public. Prefer a small server-side proxy, or the demo endpoint for anything anonymous.
+CORS is enabled for every origin on `/v1`. Calling the API from a browser works, but a token in browser code is public. Prefer a small server-side proxy, or the demo endpoint for anything anonymous.

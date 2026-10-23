@@ -1,13 +1,13 @@
 import { siteUrl } from "./shared";
 
 export const heroCurl = `curl ${siteUrl}/v1/compile \\
-  -H "Authorization: Bearer $LATEX_API_KEY" \\
+  -H "Authorization: Bearer $LATEX_API_TOKEN" \\
   -H "Content-Type: text/x-tex" \\
   --data-binary @main.tex \\
   -o main.pdf`;
 
 export const sampleCurl = `curl ${siteUrl}/v1/compile \\
-  -H "Authorization: Bearer $LATEX_API_KEY" \\
+  -H "Authorization: Bearer $LATEX_API_TOKEN" \\
   -H "Content-Type: application/json" \\
   -H "Accept: application/pdf" \\
   -d '{
@@ -22,7 +22,7 @@ export const sampleJavaScript = `import { LatexApi } from "@jibaru/latex-api-sdk
 import { readFile, writeFile } from "node:fs/promises";
 
 const api = new LatexApi({
-  apiKey: process.env.LATEX_API_KEY,
+  apiKey: process.env.LATEX_API_TOKEN,
   baseUrl: "${siteUrl}",
 });
 
@@ -55,7 +55,7 @@ import requests
 r = requests.post(
     "${siteUrl}/v1/compile",
     headers={
-        "Authorization": f"Bearer {os.environ['LATEX_API_KEY']}",
+        "Authorization": f"Bearer {os.environ['LATEX_API_TOKEN']}",
         "Accept": "application/pdf",
     },
     json={

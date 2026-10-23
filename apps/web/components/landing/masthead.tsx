@@ -1,6 +1,8 @@
+import { Show } from "@clerk/nextjs";
 import { GithubLogoIcon } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { appName, githubUrl } from "@/lib/shared";
+import { AccountMenu } from "./account-menu";
 import { ThemeToggle } from "./theme-toggle";
 
 const items = [
@@ -41,6 +43,22 @@ export function Masthead() {
             <span className="sr-only">GitHub repository</span>
           </a>
           <ThemeToggle />
+          <Show
+            when="signed-in"
+            fallback={
+              <Link href="/sign-in" className="btn btn-secondary ml-1 px-3 py-1.5 text-[0.85rem]">
+                Sign in
+              </Link>
+            }
+          >
+            <Link
+              href="/dashboard"
+              className="quiet-link hidden px-2 py-2.5 text-[0.9rem] sm:inline-block"
+            >
+              Dashboard
+            </Link>
+            <AccountMenu />
+          </Show>
         </nav>
       </div>
     </header>

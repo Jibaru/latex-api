@@ -1,6 +1,8 @@
+import { ClerkProvider } from "@clerk/nextjs";
 import { RootProvider } from "fumadocs-ui/provider/next";
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans, Newsreader } from "next/font/google";
+import { clerkAppearance } from "@/lib/clerk";
 import { appName, siteUrl } from "@/lib/shared";
 import "./global.css";
 
@@ -62,11 +64,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
     >
       <body className="flex min-h-screen flex-col">
-        <RootProvider
-          theme={{ defaultTheme: "system", enableSystem: true, disableTransitionOnChange: true }}
-        >
-          {children}
-        </RootProvider>
+        <ClerkProvider appearance={clerkAppearance}>
+          <RootProvider
+            theme={{ defaultTheme: "system", enableSystem: true, disableTransitionOnChange: true }}
+          >
+            {children}
+          </RootProvider>
+        </ClerkProvider>
       </body>
     </html>
   );
