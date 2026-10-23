@@ -1,0 +1,46 @@
+---
+title: API reference
+description: Every endpoint, generated from the OpenAPI 3.1 document at /openapi.json.
+---
+
+The pages in this section are generated from [`/openapi.json`](https://latex-api.crafter.run/openapi.json) at build time; each one documents the request, the responses and example calls in several languages, with a "try it" panel.
+
+Prefer a single scrolling page with a built-in HTTP client? The API server hosts a Scalar reference at <a href="/reference">/reference</a> ("Interactive reference").
+
+## Compile
+
+<Cards>
+  <Card href="/docs/api/compile/compile" title="POST /v1/compile" description="Compile a project synchronously." />
+  <Card href="/docs/api/compile/demo-compile" title="POST /v1/demo/compile" description="Compile without an API key (playground)." />
+</Cards>
+
+## Jobs
+
+<Cards>
+  <Card href="/docs/api/jobs/create-job" title="POST /v1/jobs" description="Create an asynchronous compile job." />
+  <Card href="/docs/api/jobs/get-job" title="GET /v1/jobs/{id}" description="Get a job." />
+  <Card href="/docs/api/jobs/cancel-job" title="DELETE /v1/jobs/{id}" description="Cancel a queued or running job." />
+  <Card href="/docs/api/jobs/job-events" title="GET /v1/jobs/{id}/events" description="Stream job events (SSE)." />
+  <Card href="/docs/api/jobs/job-pdf" title="GET /v1/jobs/{id}/pdf" description="Download the PDF." />
+  <Card href="/docs/api/jobs/job-log" title="GET /v1/jobs/{id}/log" description="Download the full LaTeX log." />
+</Cards>
+
+## Templates
+
+<Cards>
+  <Card href="/docs/api/templates/list-templates" title="GET /v1/templates" description="List templates." />
+  <Card href="/docs/api/templates/get-template" title="GET /v1/templates/{id}" description="Get a template and its file list." />
+  <Card href="/docs/api/templates/template-file" title="GET /v1/templates/{id}/files/{path}" description="Read one template file." />
+  <Card href="/docs/api/templates/template-archive" title="GET /v1/templates/{id}/archive" description="Download the template as a zip." />
+  <Card href="/docs/api/templates/template-preview" title="GET /v1/templates/{id}/preview" description="Rendered PDF of the untouched template." />
+  <Card href="/docs/api/templates/template-compile" title="POST /v1/templates/{id}/compile" description="Compile a template with your changes." />
+  <Card href="/docs/api/templates/template-job" title="POST /v1/templates/{id}/jobs" description="Compile a template asynchronously." />
+</Cards>
+
+## Meta
+
+<Cards>
+  <Card href="/docs/api/meta/limits" title="GET /v1/limits" description="Effective server limits." />
+  <Card href="/docs/api/meta/stats" title="GET /v1/stats" description="Usage statistics (key required)." />
+  <Card href="/docs/api/meta/health" title="GET /health" description="Health check." />
+</Cards>

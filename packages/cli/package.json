@@ -1,0 +1,64 @@
+{
+  "name": "@jibaru/latex-api-cli",
+  "version": "0.1.0",
+  "description": "Command-line client for the LaTeX API: compile projects to PDF, watch for changes, run async jobs and scaffold templates.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jibaru/latex-api.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/jibaru/latex-api#readme",
+  "bugs": {
+    "url": "https://github.com/jibaru/latex-api/issues"
+  },
+  "keywords": [
+    "latex",
+    "pdf",
+    "tex",
+    "cli",
+    "compile",
+    "pdflatex",
+    "xelatex",
+    "lualatex"
+  ],
+  "bin": {
+    "latex-api": "./dist/cli.mjs",
+    "ltx": "./dist/cli.mjs"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "build:binaries": "bash scripts/build-binaries.sh"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.8.1",
+    "@jibaru/latex-api-sdk": "workspace:^",
+    "chokidar": "^6.0.0",
+    "citty": "^0.2.2",
+    "consola": "^3.4.2",
+    "fflate": "^0.8.3",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@latex-api/config": "workspace:*",
+    "@types/node": "^22.0.0",
+    "tsdown": "^0.23.1",
+    "typescript": "^5.9.0",
+    "vitest": "^5.0.5"
+  }
+}

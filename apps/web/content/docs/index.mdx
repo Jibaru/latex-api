@@ -1,0 +1,47 @@
+---
+title: Introduction
+description: What LaTeX API is, where it lives and how to talk to it.
+---
+
+LaTeX API compiles LaTeX projects to PDF over HTTP. You send a `.tex` file, a set of files or a zip; the server runs pdfLaTeX, XeLaTeX or LuaLaTeX from TeX Live 2026 inside a throwaway container and returns the PDF together with a parsed log: every error and warning with its file, line and context.
+
+It is open source (MIT) and self-hostable. A public instance runs at the base URL below.
+
+## Base URL
+
+```text
+https://latex-api.crafter.run
+```
+
+All API routes live under `/v1`. The OpenAPI 3.1 document is served at [`/openapi.json`](https://latex-api.crafter.run/openapi.json) and an interactive reference at [`/reference`](/reference).
+
+## Authentication
+
+Protected routes take an API key in either header:
+
+```http
+Authorization: Bearer <key>
+X-API-Key: <key>
+```
+
+Keys are issued by whoever operates the instance. See [Authentication](/docs/authentication) for the public endpoints and rate limits.
+
+## Content types
+
+| You send                      | `Content-Type`                                 | Notes                                                  |
+| ----------------------------- | ---------------------------------------------- | ------------------------------------------------------ |
+| A single document             | `text/x-tex`                                   | Body is the file; `?entrypoint=` names it (`main.tex`) |
+| Several files as JSON         | `application/json`                             | `files[]` with `path`, `content`, optional `encoding`  |
+| Files or a zip as form fields | `multipart/form-data`                          | `files` parts and/or a `project` zip part              |
+| A zip archive                 | `application/zip`                              | Options go in the query string                         |
+
+Responses are a PDF (`application/pdf`) or, with `Accept: application/json`, a JSON job envelope. Errors are always `application/problem+json` ([RFC 9457](https://www.rfc-editor.org/rfc/rfc9457)); see [Errors](/docs/errors).
+
+## Where to go next
+
+<Cards>
+  <Card href="/docs/quickstart" title="Quickstart" description="Your first PDF with curl, the SDK or the CLI." />
+  <Card href="/docs/compile" title="Compile" description="Synchronous compiles: bodies, options, headers." />
+  <Card href="/docs/jobs" title="Jobs" description="Async compiles with polling, SSE and webhooks." />
+  <Card href="/docs/api" title="API reference" description="Every endpoint, generated from the OpenAPI document." />
+</Cards>

@@ -1,0 +1,6 @@
+.source
+.next
+next-env.d.ts
+content/docs/api/**
+!content/docs/api/index.mdx
+!content/docs/api/meta.json

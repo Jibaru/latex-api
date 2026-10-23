@@ -1,0 +1,66 @@
+---
+title: Projects and files
+description: How multi-file projects are validated, which file becomes the entrypoint, bibliographies, engines and what is not supported.
+---
+
+A project is a flat list of files with relative paths plus an entrypoint and an engine. The same rules apply whichever body format you use.
+
+## Paths
+
+- Relative POSIX paths: `main.tex`, `sections/intro.tex`, `figures/plot.pdf`. Backslashes are normalised to `/`.
+- No `..` segments, no absolute paths, no `NUL` bytes, no empty segments.
+- Segment names are limited in length and Windows reserved names (`CON`, `NUL`, `COM1`...) are rejected.
+- Paths are unique case-insensitively: `Main.tex` and `main.tex` in one project is an error.
+- Symlinks inside zip archives are ignored.
+
+Violations return `400 invalid_project` with the offending `path` in the problem body.
+
+## Entrypoint [#entrypoint]
+
+When you do not pass `entrypoint`, it is guessed from the `.tex`, `.ltx` and `.latex` files:
+
+1. If there is exactly one, that is it.
+2. Otherwise the first match, in order, of `main.tex`, `paper.tex`, `cv.tex`, `resume.tex`, `document.tex`, `index.tex` (case-insensitive).
+3. Otherwise, if exactly one `.tex` file sits at the root (no folder), that one.
+4. Otherwise `400 invalid_project`: pass `entrypoint` explicitly.
+
+An explicit `entrypoint` must be one of the project files.
+
+## Engines
+
+| Engine     | Use when                                                        |
+| ---------- | --------------------------------------------------------------- |
+| `pdflatex` | Default. Fastest; classic packages, Type 1 fonts                |
+| `xelatex`  | Unicode input and system/OpenType fonts via `fontspec`          |
+| `lualatex` | Same as XeLaTeX plus Lua; required by some classes (Awesome-CV) |
+
+Choose with `engine`, a `% !TEX program = xelatex` comment at the top of the entrypoint, or let it default. latexmk runs the engine with `-interaction=nonstopmode -halt-on-error -file-line-error` and as many passes as references require.
+
+## Bibliographies
+
+`options.bibliography` controls the bibliography step:
+
+| Value    | Behaviour                                                       |
+| -------- | --------------------------------------------------------------- |
+| `auto`   | Default. latexmk runs bibtex or biber only when the document needs it |
+| `bibtex` | Force bibtex                                                    |
+| `biber`  | Force biber (biblatex)                                          |
+| `none`   | Never run a bibliography tool                                   |
+
+Put `.bib` files in the project next to the entrypoint (or wherever `\bibliography{}` / `\addbibresource{}` points).
+
+## Images, classes and fonts
+
+- Images: `pdf`, `png`, `jpg`, `eps` (converted by `epstopdf` within the sandbox limits). Send them base64 in JSON or as binary parts.
+- Classes and packages that are not in TeX Live must be uploaded with the project (`.cls`, `.sty`, `.bst`). The templates ship theirs.
+- Custom fonts: upload the `.ttf` / `.otf` file and load it by file name with XeLaTeX or LuaLaTeX, e.g. `\setmainfont{MyFont.otf}` or `\setmainfont{MyFont}[Path=./fonts/]`. System font names you use locally are not available.
+
+The compiler image carries TeX Live 2026 `scheme-small` plus the collections `pictures`, `latexextra`, `bibtexextra`, `luatex`, `fontsrecommended`, `langspanish`, `mathscience`, `binextra` and packages such as `ieeetran`, `fontawesome5/6`, `academicons`, `simpleicons`, `roboto`, `sourcesans`, `lato`, `raleway`, `fira`, `inter`, `montserrat`, `libertinus-fonts`, `biblatex-ieee`. If a package is missing, upload it.
+
+## Not supported
+
+- **Shell escape**: `-shell-escape` is off and cannot be enabled. `minted`, TikZ `externalize`, `gnuplot` and anything that spawns a process will fail. Use `listings` instead of `minted`.
+- **Network**: the container has no network. `\url{}` is fine; downloading at compile time is not.
+- **Writing outside the project**: `openout_any=p`, so output files stay in the work directory.
+- **Long-running compiles**: 60 s synchronously, 10 minutes asynchronously, 2 GB RAM and 2 CPUs per compile. See [Limits](/docs/limits).
+- **Persisting output**: artifacts expire after 24 h.

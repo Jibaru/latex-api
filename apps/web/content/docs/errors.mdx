@@ -1,0 +1,105 @@
+---
+title: Errors
+description: Problem details (RFC 9457) and the complete list of error codes.
+---
+
+Every error is `application/problem+json`. The `type` URL points at the matching section of this page, so `https://latex-api.crafter.run/docs/errors#compile_failed` is both a stable identifier and a link.
+
+```json
+{
+  "type": "https://latex-api.crafter.run/docs/errors#payload_too_large",
+  "title": "Payload too large",
+  "status": 413,
+  "detail": "Project exceeds 209715200 bytes",
+  "instance": "/v1/compile",
+  "code": "payload_too_large",
+  "maxUnpackedBytes": 209715200
+}
+```
+
+| Field      | Meaning                                                       |
+| ---------- | ------------------------------------------------------------- |
+| `type`     | URL of the code's section below                               |
+| `title`    | Short human title, stable per code                            |
+| `status`   | HTTP status, repeated                                         |
+| `detail`   | Human explanation of this occurrence                          |
+| `instance` | Request path                                                  |
+| `code`     | Machine-readable code; switch on this                         |
+| others     | Code-specific fields (`diagnostics`, `retryAfterSeconds`, `issues`, `path`...) |
+
+Every response also carries `X-Request-Id`; include it when reporting a problem.
+
+## Codes
+
+| Code                                              | Status | When                                                   |
+| ------------------------------------------------- | ------ | ------------------------------------------------------ |
+| [`invalid_request`](#invalid_request)             | 400    | Body or query failed validation                        |
+| [`invalid_project`](#invalid_project)             | 400    | Files, paths or entrypoint are not acceptable          |
+| [`payload_too_large`](#payload_too_large)         | 413    | Upload, unpacked size, file count or file size over the limit |
+| [`compile_failed`](#compile_failed)               | 422    | LaTeX reported errors                                  |
+| [`timeout`](#timeout)                             | 408    | Synchronous compile exceeded its timeout               |
+| [`unauthorized`](#unauthorized)                   | 401    | Missing or unknown API key                             |
+| [`rate_limited`](#rate_limited)                   | 429    | Per-key or per-IP limit exceeded                       |
+| [`template_not_found`](#template_not_found)       | 404    | Unknown template id                                    |
+| [`job_not_found`](#job_not_found)                 | 404    | Unknown, expired or someone else's job                 |
+| [`job_not_cancellable`](#job_not_cancellable)     | 409    | The job already finished                               |
+| [`compiler_unavailable`](#compiler_unavailable)   | 503    | The compiler backend (Docker) is not reachable         |
+| [`unsupported_media_type`](#unsupported_media_type) | 415  | Content type not accepted                              |
+| [`not_found`](#not_found)                         | 404    | No such route or artifact                              |
+| [`internal`](#internal)                           | 500    | Unexpected server error                                |
+
+### invalid_request [#invalid_request]
+
+`400`. The JSON body or the query string did not match the schema. `issues` lists the validation problems (path and message) as produced by the schema validator. Malformed JSON gives `detail: "Malformed JSON body: ..."`.
+
+### invalid_project [#invalid_project]
+
+`400`. The files are structurally wrong: a path contains `..` or is absolute, two paths collide, the entrypoint is not among the files or could not be guessed, a multipart body carried no files, or the raw body was empty. Extra fields such as `path` or `entrypoint` name the culprit.
+
+### payload_too_large [#payload_too_large]
+
+`413`. The request body is over `maxUploadBytes` (50 MB by default), the unpacked project is over `maxUnpackedBytes` (200 MB), there are more than `maxFiles` (500) files or one file is over `maxFileBytes`. The relevant limit is included (`maxUploadBytes`, `maxUnpackedBytes`, `maxFiles`, `maxFileBytes`). See [Limits](/docs/limits).
+
+### compile_failed [#compile_failed]
+
+`422`. latexmk exited with an error or the log contained errors. The body carries `jobId`, `errors`, `warnings`, `diagnostics[]`, `logUrl` and, when a PDF was still written, `pdfUrl`. See [Diagnostics](/docs/diagnostics). For jobs, this appears as `status: "failed"` with `error.reason: "compile_failed"` rather than as an HTTP error.
+
+### timeout [#timeout]
+
+`408`. A synchronous compile ran past `options.timeoutMs` (at most `syncTimeoutMs`, 60 s) and was killed. `diagnostics` holds whatever had been parsed so far and `logUrl` the partial log. Move the document to a [job](/docs/jobs), which allows up to 10 minutes.
+
+### unauthorized [#unauthorized]
+
+`401`. No `Authorization: Bearer` or `X-API-Key` header, or the key is unknown. See [Authentication](/docs/authentication).
+
+### rate_limited [#rate_limited]
+
+`429`. Over the hourly or concurrent limit for this key, or over the per-IP limit of the demo endpoint. `retryAfterSeconds` in the body and the `Retry-After` header say how long to wait.
+
+### template_not_found [#template_not_found]
+
+`404`. No template with that id. `templateId` is echoed back. List ids with `GET /v1/templates`.
+
+### job_not_found [#job_not_found]
+
+`404`. The job id is unknown, expired (artifacts are kept 24 h) or belongs to another key.
+
+### job_not_cancellable [#job_not_cancellable]
+
+`409`. `DELETE /v1/jobs/{id}` was called on a job that is already `succeeded`, `failed`, `timed_out` or `cancelled`. `status` tells which.
+
+### compiler_unavailable [#compiler_unavailable]
+
+`503`. The server could not start a compile container, typically because the Docker socket is unreachable or the compiler image is missing. Nothing in your request causes this; retry later or check the instance's `/health`.
+
+### unsupported_media_type [#unsupported_media_type]
+
+`415`. The `Content-Type` is none of the accepted ones. See [Compile](/docs/compile#request-bodies).
+
+### not_found [#not_found]
+
+`404`. No route matches, a template file path does not exist, or a job has no PDF/log (for example a job that failed before producing output).
+
+### internal [#internal]
+
+`500`. Something unexpected happened on the server. The response includes `X-Request-Id`; please [open an issue](https://github.com/jibaru/latex-api/issues) with it.

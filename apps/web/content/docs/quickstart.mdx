@@ -1,0 +1,117 @@
+---
+title: Quickstart
+description: Compile a document in under a minute with curl, then with the SDK and the CLI.
+---
+
+You need an API key from the operator of the instance you are using. Put it in `LATEX_API_KEY`.
+
+## 1. curl
+
+Write a document:
+
+```latex title="main.tex"
+\documentclass{article}
+\begin{document}
+Hello from the cloud.
+\end{document}
+```
+
+Send it as the raw body and save the PDF:
+
+```bash
+curl https://latex-api.crafter.run/v1/compile \
+  -H "Authorization: Bearer $LATEX_API_KEY" \
+  -H "Content-Type: text/x-tex" \
+  --data-binary @main.tex \
+  -o main.pdf
+```
+
+A successful response is `200` with the PDF and three headers:
+
+```http
+X-Job-Id: 7f1c7f9e-3b1e-4d2a-9a1a-2f0c1b7e5d11
+X-Compile-Cached: false
+X-Compile-Warnings: 0
+```
+
+If LaTeX reports errors you get `422` with diagnostics instead. Add `-w '%{http_code}'` or use `--fail-with-body` to notice it in scripts. To see the diagnostics on success too, ask for JSON:
+
+```bash
+curl https://latex-api.crafter.run/v1/compile \
+  -H "Authorization: Bearer $LATEX_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{"files":[{"path":"main.tex","content":"\\documentclass{article}\\begin{document}Hello\\end{document}"}]}'
+```
+
+```json
+{
+  "job": {
+    "id": "7f1c7f9e-3b1e-4d2a-9a1a-2f0c1b7e5d11",
+    "status": "succeeded",
+    "mode": "sync",
+    "engine": "pdflatex",
+    "entrypoint": "main.tex",
+    "result": {
+      "cached": false,
+      "durationMs": 1830,
+      "exitCode": 0,
+      "errors": 0,
+      "warnings": 0,
+      "pages": 1,
+      "pdfBytes": 13211,
+      "pdfUrl": "https://latex-api.crafter.run/v1/jobs/7f1c7f9e-.../pdf",
+      "logUrl": "https://latex-api.crafter.run/v1/jobs/7f1c7f9e-.../log",
+      "diagnostics": []
+    },
+    "links": { "self": "https://latex-api.crafter.run/v1/jobs/7f1c7f9e-...", "pdf": "...", "log": "..." }
+  }
+}
+```
+
+## 2. TypeScript SDK
+
+```bash
+npm install @jibaru/latex-api-sdk
+```
+
+```ts
+import { LatexApi } from "@jibaru/latex-api-sdk";
+import { readFile, writeFile } from "node:fs/promises";
+
+const api = new LatexApi({
+  apiKey: process.env.LATEX_API_KEY!,
+  baseUrl: "https://latex-api.crafter.run",
+});
+
+const pdf = await api.compile({
+  engine: "pdflatex",
+  files: [{ path: "main.tex", content: await readFile("main.tex", "utf8") }],
+});
+
+await writeFile("main.pdf", pdf); // Uint8Array
+```
+
+Long documents are better as jobs:
+
+```ts
+const job = await api.jobs.create({ files, options: { timeoutMs: 300_000 } });
+const finished = await api.jobs.wait(job.id);
+if (finished.status === "succeeded") console.log(finished.result?.pdfUrl);
+```
+
+More in [SDK](/docs/sdk).
+
+## 3. CLI
+
+```bash
+npx @jibaru/latex-api-cli login            # stores the key and URL in ~/.config/latex-api/config.json
+npx @jibaru/latex-api-cli compile ./paper  # zips the folder, uploads it, writes paper.pdf
+npx @jibaru/latex-api-cli compile ./paper --watch
+```
+
+`--watch` recompiles on every save and streams the compiler log over SSE. More in [CLI](/docs/cli).
+
+## Without a key
+
+The landing page [playground](/#playground) calls `POST /v1/demo/compile`, which needs no key but is limited to small single-file documents and a few compiles per minute. It is meant for trying things, not for production.

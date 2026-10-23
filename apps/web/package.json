@@ -1,0 +1,44 @@
+{
+  "name": "@latex-api/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3001",
+    "build": "pnpm run generate:api && next build",
+    "start": "next start --port 3001",
+    "typecheck": "pnpm run generate:api && fumadocs-mdx && next typegen && tsc --noEmit",
+    "generate:api": "node scripts/generate-api-docs.mjs",
+    "postinstall": "fumadocs-mdx"
+  },
+  "dependencies": {
+    "@codemirror/language": "^6.11.0",
+    "@codemirror/legacy-modes": "^6.5.5",
+    "@codemirror/state": "^6.5.0",
+    "@codemirror/view": "^6.38.0",
+    "@latex-api/openapi": "workspace:*",
+    "@lezer/highlight": "^1.2.1",
+    "@phosphor-icons/react": "^2.1.10",
+    "@uiw/react-codemirror": "^4.25.12",
+    "fumadocs-core": "16.17.7",
+    "fumadocs-mdx": "15.4.9",
+    "fumadocs-openapi": "12.5.4",
+    "fumadocs-ui": "npm:@fumadocs/base-ui@16.17.7",
+    "next": "16.4.2",
+    "next-themes": "^0.4.6",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "shiki": "^4.5.0"
+  },
+  "devDependencies": {
+    "@latex-api/config": "workspace:*",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/mdx": "^2.0.14",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "postcss": "^8.5.31",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.0"
+  }
+}

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img">
+  <title>LaTeX API</title>
+  <rect width="64" height="64" rx="10" fill="#f6f2ea"/>
+  <rect x="0.5" y="0.5" width="63" height="63" rx="9.5" fill="none" stroke="#2a2622" stroke-opacity="0.35"/>
+  <text x="32" y="47" text-anchor="middle" font-family="Georgia, 'Times New Roman', 'Noto Serif', serif" font-size="46" fill="#2a2622">§</text>
+</svg>

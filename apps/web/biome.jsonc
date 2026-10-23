@@ -1,0 +1,10 @@
+{
+  // Nested config: inherits the root biome.json and only enables the Tailwind v4
+  // directives (@theme, @custom-variant, @apply) used by app/global.css.
+  "$schema": "https://biomejs.dev/schemas/2.6.2/schema.json",
+  "root": false,
+  "extends": "//",
+  "css": {
+    "parser": { "tailwindDirectives": true }
+  }
+}

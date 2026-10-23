@@ -1,0 +1,85 @@
+---
+title: CLI
+description: "latex-api: compile folders from the terminal, watch for changes and start from templates."
+---
+
+```bash
+npm install -g @jibaru/latex-api-cli
+# or without installing
+npx @jibaru/latex-api-cli compile ./paper
+```
+
+Standalone binaries for Linux, macOS and Windows are attached to each [GitHub release](https://github.com/jibaru/latex-api/releases).
+
+## Commands
+
+```text
+latex-api login
+latex-api compile [path] [--engine <e>] [--entrypoint <f>] [-o out.pdf] [--watch] [--json]
+latex-api templates list
+latex-api templates init <id> [dir]
+latex-api jobs get <id>
+latex-api jobs logs <id>
+latex-api limits
+```
+
+### `login`
+
+Asks for the API URL and key and stores them in the config file. Verifies the key against `/v1/limits` and `/v1/stats`.
+
+### `compile [path]`
+
+`path` is a `.tex` file or a folder (default `.`). Folders are zipped, honouring `.gitignore` and `.latexapiignore`, and uploaded. By default it uses `/v1/compile` and writes `<entrypoint>.pdf` next to the source.
+
+| Flag                 | Effect                                                              |
+| -------------------- | ------------------------------------------------------------------- |
+| `--engine <e>`       | `pdflatex`, `xelatex` or `lualatex`                                 |
+| `--entrypoint <f>`   | Main file when it cannot be guessed                                 |
+| `-o, --output <f>`   | Where to write the PDF                                              |
+| `--watch`            | Recompile on every change, using `/v1/jobs` and streaming the log over SSE |
+| `--json`             | Print the job envelope (and diagnostics) as JSON instead of colours |
+
+Diagnostics are printed with the file, line and message, errors in red and warnings in yellow. The exit code is `0` on success, `1` on compile errors and `2` on other failures.
+
+```bash
+latex-api compile ./thesis --engine lualatex -o build/thesis.pdf
+latex-api compile main.tex --watch
+```
+
+### `templates list`, `templates init <id> [dir]`
+
+`list` prints the catalogue. `init` downloads a template's archive and unpacks it into `dir` (default `./<id>`), ready to `compile`.
+
+```bash
+latex-api templates init ieee-conference ./paper
+cd paper && latex-api compile
+```
+
+### `jobs get <id>`, `jobs logs <id>`
+
+Show a job or print its full LaTeX log.
+
+### `limits`
+
+Prints the instance limits.
+
+## Configuration
+
+The config file is `~/.config/latex-api/config.json` (on Windows `%APPDATA%\latex-api\config.json`):
+
+```json
+{ "url": "https://latex-api.crafter.run", "key": "sk_live_..." }
+```
+
+Environment variables override it, which is what you want in CI:
+
+| Variable         | Overrides |
+| ---------------- | --------- |
+| `LATEX_API_KEY`  | the key   |
+| `LATEX_API_URL`  | the URL   |
+
+```yaml title=".github/workflows/paper.yml"
+- run: npx @jibaru/latex-api-cli compile ./paper -o paper.pdf
+  env:
+    LATEX_API_KEY: ${{ secrets.LATEX_API_KEY }}
+```

@@ -1,0 +1,453 @@
+@import "tailwindcss";
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+@import "fumadocs-openapi/css/preset.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ------------------------------------------------------------------
+   Paper & ink. One warm neutral family, one accent (rubric red, the
+   colour scribes used for headings). Dark mode is the same paper with
+   the lamp turned down, not a different product.
+   ------------------------------------------------------------------ */
+:root {
+  --paper: oklch(96.8% 0.011 85);
+  --paper-2: oklch(94.2% 0.013 85);
+  --paper-3: oklch(91% 0.014 85);
+  --ink: oklch(21% 0.012 60);
+  --ink-2: oklch(41% 0.012 60);
+  --ink-3: oklch(55% 0.011 60);
+  --rule: oklch(85% 0.012 80);
+  --rule-strong: oklch(68% 0.013 75);
+  --accent: oklch(49% 0.165 30);
+  --accent-soft: oklch(49% 0.165 30 / 0.1);
+  --accent-ink: oklch(97% 0.01 85);
+  --ok: oklch(48% 0.11 150);
+  --warn: oklch(58% 0.13 70);
+  --code-bg: oklch(93.4% 0.012 85);
+  color-scheme: light;
+}
+
+.dark {
+  --paper: oklch(19.5% 0.01 70);
+  --paper-2: oklch(23% 0.011 70);
+  --paper-3: oklch(27% 0.012 70);
+  --ink: oklch(91.5% 0.012 85);
+  --ink-2: oklch(73% 0.011 80);
+  --ink-3: oklch(60% 0.01 80);
+  --rule: oklch(31% 0.01 70);
+  --rule-strong: oklch(44% 0.011 70);
+  --accent: oklch(73% 0.135 38);
+  --accent-soft: oklch(73% 0.135 38 / 0.14);
+  --accent-ink: oklch(17% 0.01 70);
+  --ok: oklch(74% 0.11 150);
+  --warn: oklch(78% 0.12 75);
+  --code-bg: oklch(16% 0.009 70);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-paper-3: var(--paper-3);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-ink: var(--accent-ink);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-code: var(--code-bg);
+
+  --font-sans: var(--font-sans-stack);
+  --font-serif: var(--font-serif-stack);
+  --font-mono: var(--font-mono-stack);
+
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Fumadocs tokens follow the same paper. */
+  --color-fd-background: var(--paper);
+  --color-fd-foreground: var(--ink);
+  --color-fd-muted: var(--paper-2);
+  --color-fd-muted-foreground: var(--ink-2);
+  --color-fd-popover: var(--paper);
+  --color-fd-popover-foreground: var(--ink);
+  --color-fd-card: var(--paper-2);
+  --color-fd-card-foreground: var(--ink);
+  --color-fd-border: var(--rule);
+  --color-fd-primary: var(--accent);
+  --color-fd-primary-foreground: var(--accent-ink);
+  --color-fd-secondary: var(--paper-2);
+  --color-fd-secondary-foreground: var(--ink);
+  --color-fd-accent: var(--paper-3);
+  --color-fd-accent-foreground: var(--ink);
+  --color-fd-ring: var(--accent);
+}
+
+/* neutral.css re-declares the dark palette on `.dark`; point it back at our paper. */
+.dark {
+  --color-fd-background: var(--paper);
+  --color-fd-foreground: var(--ink);
+  --color-fd-muted: var(--paper-2);
+  --color-fd-muted-foreground: var(--ink-2);
+  --color-fd-popover: var(--paper);
+  --color-fd-popover-foreground: var(--ink);
+  --color-fd-card: var(--paper-2);
+  --color-fd-card-foreground: var(--ink);
+  --color-fd-border: var(--rule);
+  --color-fd-primary: var(--accent);
+  --color-fd-primary-foreground: var(--accent-ink);
+  --color-fd-secondary: var(--paper-2);
+  --color-fd-secondary-foreground: var(--ink);
+  --color-fd-accent: var(--paper-3);
+  --color-fd-accent-foreground: var(--ink);
+  --color-fd-ring: var(--accent);
+}
+
+:root {
+  --fd-layout-width: 1360px;
+}
+
+html {
+  scrollbar-gutter: stable;
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+}
+
+/* From the Fumadocs template: keep the layout still while a dialog locks scrolling. */
+html > body[data-scroll-locked] {
+  /* biome-ignore lint/complexity/noImportantStyles: overrides an inline style set by react-remove-scroll */
+  margin-right: 0px !important;
+  /* biome-ignore lint/complexity/noImportantStyles: same inline style */
+  --removed-body-scroll-bar-size: 0px !important;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "kern", "liga", "calt";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+a,
+button,
+label,
+select,
+[role="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Visually hidden until focused; first element in the tab order. */
+.skip-link {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 50;
+  padding: 0.5rem 0.75rem;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 0.875rem;
+  transform: translateY(-200%);
+}
+.skip-link:focus-visible {
+  transform: none;
+  outline-offset: 2px;
+}
+
+/* Fumadocs typography: serif headings, same rhythm as the landing. */
+#nd-page h1,
+#nd-page .prose h2,
+#nd-page .prose h3 {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.prose :where(code):not(:where(pre code)) {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  font-weight: 400;
+}
+
+@layer components {
+  .wrap {
+    @apply mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8;
+  }
+
+  .display {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    letter-spacing: -0.015em;
+    line-height: 1.02;
+    text-wrap: balance;
+    font-variation-settings: "opsz" 72;
+  }
+
+  .heading {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.12;
+    text-wrap: balance;
+  }
+
+  .smallcaps {
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+
+  .lede {
+    font-family: var(--font-serif);
+    font-size: 1.25rem;
+    line-height: 1.5;
+    color: var(--ink-2);
+    text-wrap: pretty;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap px-5 py-2.5 text-[0.9375rem] font-medium;
+    border: 1px solid transparent;
+    transition:
+      background-color 300ms var(--ease-out-quint),
+      color 300ms var(--ease-out-quint),
+      border-color 300ms var(--ease-out-quint),
+      transform 150ms var(--ease-out-quint);
+  }
+  .btn:active {
+    transform: translateY(1px);
+  }
+  .btn-primary {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+  .btn-primary:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+  .btn-secondary {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--rule-strong);
+  }
+  .btn-secondary:hover {
+    border-color: var(--ink);
+  }
+  .btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .link {
+    color: var(--accent);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    text-decoration-color: color-mix(in oklch, var(--accent) 45%, transparent);
+    transition: text-decoration-color 200ms var(--ease-out-quint);
+  }
+  .link:hover {
+    text-decoration-color: var(--accent);
+  }
+
+  .quiet-link {
+    color: var(--ink-2);
+    text-decoration: none;
+    transition: color 200ms var(--ease-out-quint);
+  }
+  .quiet-link:hover {
+    color: var(--ink);
+  }
+
+  .badge {
+    @apply inline-flex items-center px-1.5 py-0.5 font-mono text-[0.72rem] leading-5;
+    border: 1px solid var(--rule-strong);
+    color: var(--ink-2);
+  }
+
+  .plate {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    padding: 0.375rem;
+    min-width: 0;
+  }
+  .plate-inner {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    min-width: 0;
+  }
+}
+
+/* Highlighted code (shiki, dual theme through CSS variables). */
+.code-block {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  tab-size: 2;
+}
+.code-block pre.shiki {
+  margin: 0;
+  padding: 1rem 1.125rem;
+  overflow-x: auto;
+  background: transparent;
+  color: var(--ink);
+}
+.code-block code {
+  font-family: inherit;
+}
+.code-block .shiki span {
+  color: var(--shiki-light);
+}
+.dark .code-block .shiki span {
+  color: var(--shiki-dark);
+}
+
+/* Native code tabs: radio inputs, no JS. */
+.code-tabs input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.code-tabs .code-tab-panel {
+  display: none;
+}
+.code-tabs
+  input[type="radio"]:nth-of-type(1):checked
+  ~ .code-tab-panels
+  .code-tab-panel:nth-of-type(1),
+.code-tabs
+  input[type="radio"]:nth-of-type(2):checked
+  ~ .code-tab-panels
+  .code-tab-panel:nth-of-type(2),
+.code-tabs
+  input[type="radio"]:nth-of-type(3):checked
+  ~ .code-tab-panels
+  .code-tab-panel:nth-of-type(3),
+.code-tabs
+  input[type="radio"]:nth-of-type(4):checked
+  ~ .code-tab-panels
+  .code-tab-panel:nth-of-type(4) {
+  display: block;
+}
+.code-tabs label {
+  cursor: pointer;
+  color: var(--ink-2);
+  border-bottom: 1px solid transparent;
+  margin-bottom: -1px;
+  transition:
+    color 200ms var(--ease-out-quint),
+    border-color 200ms var(--ease-out-quint);
+}
+.code-tabs label:hover {
+  color: var(--ink);
+}
+.code-tabs input[type="radio"]:nth-of-type(1):checked ~ .code-tab-list label:nth-of-type(1),
+.code-tabs input[type="radio"]:nth-of-type(2):checked ~ .code-tab-list label:nth-of-type(2),
+.code-tabs input[type="radio"]:nth-of-type(3):checked ~ .code-tab-list label:nth-of-type(3),
+.code-tabs input[type="radio"]:nth-of-type(4):checked ~ .code-tab-list label:nth-of-type(4) {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+.code-tabs input[type="radio"]:nth-of-type(1):focus-visible ~ .code-tab-list label:nth-of-type(1),
+.code-tabs input[type="radio"]:nth-of-type(2):focus-visible ~ .code-tab-list label:nth-of-type(2),
+.code-tabs input[type="radio"]:nth-of-type(3):focus-visible ~ .code-tab-list label:nth-of-type(3),
+.code-tabs input[type="radio"]:nth-of-type(4):focus-visible ~ .code-tab-list label:nth-of-type(4) {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* Playground editor (CodeMirror). The doubled class beats CodeMirror's injected base theme. */
+.cm-editor.cm-editor {
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  height: 100%;
+}
+.cm-editor.cm-editor.cm-focused {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.cm-editor.cm-editor .cm-gutters {
+  background: transparent;
+  border-right: 1px solid var(--rule);
+  color: var(--ink-3);
+}
+.cm-editor.cm-editor .cm-activeLine {
+  background: color-mix(in oklch, var(--paper-3) 55%, transparent);
+}
+.cm-editor.cm-editor .cm-activeLineGutter {
+  background: transparent;
+  color: var(--ink);
+}
+.cm-editor.cm-editor .cm-content {
+  caret-color: var(--accent);
+  padding: 0.75rem 0;
+}
+.cm-editor.cm-editor .cm-cursor {
+  border-left-color: var(--accent);
+}
+.cm-editor.cm-editor .cm-selectionBackground,
+.cm-editor.cm-editor.cm-focused .cm-selectionBackground {
+  background: var(--accent-soft);
+}
+.cm-editor.cm-editor .cm-scroller {
+  font-family: inherit;
+  overscroll-behavior: contain;
+}
+
+/* The hero settles into place once; nothing else on the page moves on its own. */
+@media (prefers-reduced-motion: no-preference) {
+  .rise {
+    animation: rise 900ms var(--ease-out-quint) both;
+  }
+  .rise-2 {
+    animation-delay: 90ms;
+  }
+  .rise-3 {
+    animation-delay: 180ms;
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

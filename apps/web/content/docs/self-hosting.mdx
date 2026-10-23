@@ -1,0 +1,100 @@
+---
+title: Self-hosting
+description: Run your own instance with Docker Compose, Postgres and the compiler image.
+---
+
+The server is one container (`ghcr.io/jibaru/latex-api`) that needs Postgres and access to a Docker daemon. For every compile it starts a short-lived sibling container from the compiler image (`ghcr.io/jibaru/latex-compiler`, TeX Live 2026, about 500 MB compressed). This web app is a separate, optional container.
+
+## Compose
+
+```yaml title="compose.yaml"
+services:
+  api:
+    image: ghcr.io/jibaru/latex-api:latest
+    restart: unless-stopped
+    ports: ["3000:3000"]
+    environment:
+      API_KEYS: "alice:${ALICE_KEY},ci:${CI_KEY}"
+      PUBLIC_URL: https://latex.example.com
+      DATABASE_URL: postgresql://latex:latex@postgres:5432/latex
+      DATA_DIR: /data
+      HOST_DATA_DIR: /opt/latex-api/data
+      COMPILER_IMAGE: ghcr.io/jibaru/latex-compiler:latest
+      # COMPILER_RUNTIME: runsc
+      MAX_CONCURRENT_JOBS: "2"
+    volumes:
+      - /opt/latex-api/data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on: [postgres]
+
+  web:
+    image: ghcr.io/jibaru/latex-api-web:latest
+    restart: unless-stopped
+    ports: ["3001:3001"]
+    environment:
+      API_INTERNAL_URL: http://api:3000
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: latex
+      POSTGRES_PASSWORD: latex
+      POSTGRES_DB: latex
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
+```
+
+Pull the compiler image once so the first compile does not wait for it (the API also pulls it on start when missing):
+
+```bash
+docker pull ghcr.io/jibaru/latex-compiler:latest
+docker compose up -d
+curl http://localhost:3000/health
+```
+
+Put a reverse proxy in front with `/`, `/docs` going to `web` and `/v1`, `/openapi.json`, `/health`, `/reference` going to `api`, so one domain serves both.
+
+## Environment
+
+| Variable                  | Required | Default                 | Notes                                                                 |
+| ------------------------- | -------- | ----------------------- | --------------------------------------------------------------------- |
+| `API_KEYS`                | yes      |                         | `name:secret,name2:secret2`. Names appear in logs                      |
+| `PUBLIC_URL`              | yes      |                         | Used in `links`, problem `type` URLs and the OpenAPI `servers` entry   |
+| `DATABASE_URL`            | prod     |                         | Postgres. Without it jobs are in-memory and lost on restart            |
+| `DATA_DIR`                | no       | `./.data`               | Workspaces and artifacts, inside the API container                     |
+| `HOST_DATA_DIR`           | docker   |                         | The same directory as the Docker daemon sees it; needed when the API runs in a container |
+| `COMPILER_IMAGE`          | yes      |                         | e.g. `ghcr.io/jibaru/latex-compiler:latest`                            |
+| `COMPILER_RUNTIME`        | no       |                         | `runsc` to run compiles under gVisor                                   |
+| `COMPILER_SECCOMP_PROFILE`| no       | bundled CLSI profile    | Path to a seccomp JSON profile                                         |
+| `COMPILER_USER`           | no       | `65534:65534`           | uid:gid inside the compile container                                   |
+| `DOCKER_SOCKET`           | no       | `/var/run/docker.sock`  |                                                                       |
+| `TEMPLATES_DIR`           | no       | bundled                 | Directory of templates                                                 |
+| `DEMO_API_KEY`            | no       |                         | Enables the playground endpoint                                        |
+| `LOG_LEVEL`               | no       | `info`                  | pino level                                                             |
+| Limits                    | no       | see [Limits](/docs/limits) | `MAX_UPLOAD_BYTES`, `SYNC_TIMEOUT_MS`, `JOB_MEMORY`, ...             |
+
+The web image reads `NEXT_PUBLIC_API_URL` at build time (leave empty when both share a domain) and `API_INTERNAL_URL` at runtime for server-side fetches.
+
+## Sizing
+
+Each compile gets up to `JOB_CPUS` CPUs and `JOB_MEMORY` RAM, and `MAX_CONCURRENT_JOBS` run at once. A 2 vCPU / 4 GB host comfortably runs two concurrent compiles with the defaults. Disk: the compiler image (about 1.5 GB unpacked) plus artifacts, which are purged after `ARTIFACT_TTL_HOURS`.
+
+## Security notes
+
+- **Sibling containers**: the API talks to the host Docker daemon through the socket. Whoever controls the API container effectively controls Docker, so keep the API image updated and never expose the socket elsewhere.
+- Compiles run with `--network none`, a read-only root filesystem, a tmpfs work directory, uid 65534, all capabilities dropped, `no-new-privileges`, a seccomp profile derived from Overleaf's CLSI, a pids limit, memory, CPU and file-size ulimits, and a hard `timeout -s KILL`.
+- **gVisor**: set `COMPILER_RUNTIME=runsc` after installing gVisor on the host for a second kernel boundary. Compiles are slower (roughly 1.5x) but the host kernel is no longer directly reachable from TeX.
+- Shell escape is compiled out of the image configuration (`shell_escape=f`, `openout_any=p`).
+- Keys are compared in constant time; rotate them by changing `API_KEYS` and restarting.
+
+## Updating
+
+```bash
+docker compose pull && docker compose up -d
+```
+
+Database migrations run on start. Pin image tags to a version for reproducible deployments.

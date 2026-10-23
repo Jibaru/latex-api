@@ -1,0 +1,101 @@
+---
+title: Templates
+description: Ready-to-compile projects you can download, preview or compile with your own files on top.
+---
+
+Templates are complete projects shipped with the server. Reading them needs no key; compiling them does.
+
+## Routes
+
+| Route                                    | Auth | Returns                                                      |
+| ---------------------------------------- | ---- | ------------------------------------------------------------ |
+| `GET /v1/templates`                      | no   | `{ templates: Template[] }`                                  |
+| `GET /v1/templates/{id}`                 | no   | `{ template }` including the file list                       |
+| `GET /v1/templates/{id}/files/{path}`    | no   | One file (`path` URL-encoded, e.g. `sections%2Fintro.tex`)   |
+| `GET /v1/templates/{id}/archive`         | no   | A zip of the project, `{id}/...` inside                      |
+| `GET /v1/templates/{id}/preview`         | no   | The PDF of the untouched template (compiled once, then cached) |
+| `POST /v1/templates/{id}/compile`        | key  | Compile with overrides, same responses as `/v1/compile`      |
+| `POST /v1/templates/{id}/jobs`           | key  | Same, asynchronously; `202` with a job                        |
+
+A `Template` looks like this:
+
+```json
+{
+  "id": "ieee-conference",
+  "name": "IEEE conference paper",
+  "description": "Two-column IEEEtran conference paper with abstract, keywords, TikZ figure, pgfplots chart, booktabs table, equations and a BibTeX bibliography.",
+  "category": "paper",
+  "engine": "pdflatex",
+  "entrypoint": "main.tex",
+  "tags": ["ieee", "conference", "paper", "bibtex", "two-column"],
+  "license": "IEEEtran class: LPPL 1.3 (Michael Shell / IEEE). Template content: MIT.",
+  "source": "https://ctan.org/pkg/ieeetran",
+  "variables": [],
+  "files": [
+    { "path": "main.tex", "size": 9120, "editable": true },
+    { "path": "refs.bib", "size": 1204, "editable": true },
+    { "path": "IEEEtran.cls", "size": 300123 }
+  ],
+  "links": {
+    "self": "https://latex-api.crafter.run/v1/templates/ieee-conference",
+    "archive": "https://latex-api.crafter.run/v1/templates/ieee-conference/archive",
+    "preview": "https://latex-api.crafter.run/v1/templates/ieee-conference/preview",
+    "compile": "https://latex-api.crafter.run/v1/templates/ieee-conference/compile"
+  }
+}
+```
+
+`editable` marks the files you are expected to change; the rest (classes, fonts) are usually left alone.
+
+## Compile with overrides
+
+Send only the files you changed. A file with the same path replaces the template's copy; a new path is added. Everything else comes from the template.
+
+```bash
+curl https://latex-api.crafter.run/v1/templates/ieee-conference/compile \
+  -H "Authorization: Bearer $LATEX_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "files": [
+      { "path": "main.tex", "content": "..." },
+      { "path": "refs.bib", "content": "..." }
+    ]
+  }' \
+  -o paper.pdf
+```
+
+The JSON body is a `TemplateCompileRequest`: `files` (optional), `entrypoint`, `engine` and `options` all override the manifest. Multipart `files` parts work the same way, and an empty body compiles the template as is. `POST .../jobs` returns `202` with a job envelope whose `templateId` is set.
+
+## Catalogue
+
+### IEEE conference paper [#ieee-conference]
+
+`ieee-conference`, pdfLaTeX. Two-column IEEEtran paper with abstract, keywords, a TikZ figure, a pgfplots chart, a booktabs table, equations and a BibTeX bibliography. Edit `main.tex` and `refs.bib`.
+
+### IEEE journal article [#ieee-journal]
+
+`ieee-journal`, pdfLaTeX. IEEEtran journal layout with running heads, a drop-cap introduction, an algorithm, flow diagram, chart, table, appendix, bibliography and author biographies. Edit `main.tex` and `refs.bib`.
+
+### Awesome-CV résumé [#cv-awesome]
+
+`cv-awesome`, LuaLaTeX. One-page résumé based on posquit0's Awesome-CV: centred header, social links and sections in `sections/summary.tex`, `experience.tex`, `skills.tex`, `education.tex`. Edit `cv.tex` and the section files.
+
+### AltaCV résumé [#cv-altacv]
+
+`cv-altacv`, pdfLaTeX. Two-column résumé on LianTze Lim's AltaCV class with contact icons, wheel chart, skill tags and star ratings. Edit `cv.tex`.
+
+### Tri-fold brochure [#trifold-brochure]
+
+`trifold-brochure`, pdfLaTeX. Six-panel landscape A4 brochure on the `leaflet` class: covers, schedule, map, process diagram and feature panels drawn with TikZ. Edit `brochure.tex`.
+
+### Infographic poster (A0) [#infographic-poster]
+
+`infographic-poster`, pdfLaTeX. Three-column A0 portrait `tikzposter` with a custom colour theme, pgfplots charts, a flow diagram and TikZ icons. Edit `poster.tex`.
+
+### Informe técnico (español) [#report-es]
+
+`report-es`, pdfLaTeX. Spanish technical report with a colour cover, abstract, indexes, three chapters under `chapters/`, TikZ figure and chart, booktabs tables, a code listing and an apalike bibliography. Edit `main.tex`, the chapter files and `refs.bib`.
+
+## Licenses
+
+Each template's `license` field names the class license (LPPL for IEEEtran, AltaCV, leaflet, tikzposter; LPPL 1.3c for Awesome-CV) and the license of the sample content (MIT, or CC BY-SA 4.0 for the Awesome-CV example). Fonts come from TeX Live under their own licenses.

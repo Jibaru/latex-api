@@ -1,0 +1,4 @@
+{
+  "title": "API reference",
+  "pages": ["index", "compile", "jobs", "templates", "meta"]
+}

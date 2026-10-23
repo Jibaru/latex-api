@@ -1,0 +1,163 @@
+---
+title: Compile (sync)
+description: POST /v1/compile waits for the result and returns the PDF or a JSON envelope.
+---
+
+`POST /v1/compile` compiles and waits, up to the synchronous timeout (60 s by default). For anything that may take longer, use [Jobs](/docs/jobs); the request bodies are the same.
+
+## Request bodies
+
+### JSON
+
+```http
+POST /v1/compile
+Content-Type: application/json
+```
+
+```json
+{
+  "files": [
+    { "path": "main.tex", "content": "\\documentclass{article}\\input{intro}\\begin{document}...\\end{document}" },
+    { "path": "intro.tex", "content": "\\usepackage{graphicx}" },
+    { "path": "figures/plot.png", "content": "iVBORw0KGgo...", "encoding": "base64" }
+  ],
+  "entrypoint": "main.tex",
+  "engine": "pdflatex",
+  "options": { "timeoutMs": 60000, "bibliography": "auto", "force": false }
+}
+```
+
+- `files` (required, 1 to 1000): `path` is a relative POSIX path, `content` is UTF-8 text or base64 when `encoding` is `"base64"`.
+- `entrypoint`: the main `.tex` file. Guessed when omitted, see [Projects](/docs/projects#entrypoint).
+- `engine`: `pdflatex`, `xelatex` or `lualatex`. Detected from a `% !TEX program = ...` comment, then defaults to `pdflatex`.
+- `options.timeoutMs`: capped by the server limit. `options.bibliography`: `auto` (default), `bibtex`, `biber` or `none`. `options.force`: skip the cache.
+
+### Multipart
+
+```http
+POST /v1/compile
+Content-Type: multipart/form-data
+```
+
+```bash
+curl https://latex-api.crafter.run/v1/compile \
+  -H "Authorization: Bearer $LATEX_API_KEY" \
+  -F "files=@main.tex" \
+  -F "files=@sections/intro.tex;filename=sections/intro.tex" \
+  -F "files=@refs.bib" \
+  -F "engine=xelatex" \
+  -o main.pdf
+```
+
+- Each `files` part is one file. The part's filename is its project path, so it may contain folders (`sections/intro.tex`).
+- A part named `project`, `zip` or `archive`, or any part whose filename ends in `.zip`, is unpacked into the project.
+- Text fields `entrypoint`, `engine`, `timeoutMs`, `bibliography`, `force`, `webhookUrl`, or a JSON-encoded `options` field, set the options.
+
+```bash
+curl https://latex-api.crafter.run/v1/compile \
+  -H "Authorization: Bearer $LATEX_API_KEY" \
+  -F "project=@paper.zip" \
+  -F 'options={"bibliography":"biber"}' \
+  -o paper.pdf
+```
+
+### Zip
+
+```http
+POST /v1/compile?engine=lualatex&entrypoint=cv.tex
+Content-Type: application/zip
+```
+
+```bash
+curl "https://latex-api.crafter.run/v1/compile?engine=lualatex&entrypoint=cv.tex" \
+  -H "Authorization: Bearer $LATEX_API_KEY" \
+  -H "Content-Type: application/zip" \
+  --data-binary @cv.zip \
+  -o cv.pdf
+```
+
+A top-level folder in the archive is fine; paths are taken relative to the archive root as they are. Options come from the query string.
+
+### Raw `.tex`
+
+```http
+POST /v1/compile?entrypoint=main.tex
+Content-Type: text/x-tex
+```
+
+The body is a single file. `application/x-tex`, `text/plain` and an empty content type are accepted too. The file is named by `?entrypoint=` (default `main.tex`).
+
+## Query parameters
+
+For zip and raw bodies (JSON and multipart carry these in the body):
+
+| Parameter      | Values                                 |
+| -------------- | -------------------------------------- |
+| `engine`       | `pdflatex`, `xelatex`, `lualatex`      |
+| `entrypoint`   | relative path                          |
+| `timeoutMs`    | integer, capped by the server          |
+| `bibliography` | `auto`, `bibtex`, `biber`, `none`      |
+| `force`        | `true` or `1` to bypass the cache      |
+
+## Responses
+
+### `200`: PDF
+
+By default the body is the PDF, served inline with `Content-Disposition: inline; filename="main.pdf"`. Three headers describe the compile:
+
+| Header                | Meaning                                                      |
+| --------------------- | ------------------------------------------------------------ |
+| `X-Job-Id`            | Id of the job; the log stays available at `/v1/jobs/{id}/log` |
+| `X-Compile-Cached`    | `true` when the PDF came from the content-addressed cache    |
+| `X-Compile-Warnings`  | Number of warnings in the log                                |
+
+### `200`: JSON envelope
+
+Send `Accept: application/json` (and not `application/pdf`) to get the job instead of the bytes. It includes `result.diagnostics` with the warnings, `result.pdfUrl` and `result.logUrl`. The PDF is fetched afterwards from `pdfUrl` with the same key; see the example in the [Quickstart](/docs/quickstart#1-curl).
+
+### `422`: LaTeX reported errors
+
+```json
+{
+  "type": "https://latex-api.crafter.run/docs/errors#compile_failed",
+  "title": "Compilation failed",
+  "status": 422,
+  "detail": "LaTeX reported 1 error",
+  "instance": "/v1/compile",
+  "code": "compile_failed",
+  "jobId": "2d2ea4f9-5a4d-4d8f-8e4d-0e7b6a7a9c31",
+  "errors": 1,
+  "warnings": 0,
+  "diagnostics": [
+    {
+      "severity": "error",
+      "message": "Undefined control sequence.",
+      "file": "main.tex",
+      "line": 7,
+      "context": "l.7 \\foo\n         bar"
+    }
+  ],
+  "logUrl": "https://latex-api.crafter.run/v1/jobs/2d2ea4f9-.../log"
+}
+```
+
+When LaTeX produced a PDF anyway (it often does), `pdfUrl` is present as well. See [Diagnostics](/docs/diagnostics).
+
+### Other statuses
+
+`400 invalid_project` or `invalid_request`, `401 unauthorized`, `408 timeout`, `413 payload_too_large`, `429 rate_limited`, `503 compiler_unavailable`. All are problem+json, listed in [Errors](/docs/errors).
+
+## Engine detection
+
+The engine is chosen in this order: explicit parameter, template manifest (template routes only), magic comment in the first 2000 characters of the entrypoint, then `pdflatex`.
+
+```latex
+% !TEX program = xelatex
+\documentclass{article}
+```
+
+`latex` maps to pdfLaTeX, `xetex` to XeLaTeX and `luatex` or `luahbtex` to LuaLaTeX.
+
+## Caching
+
+The project is hashed (file paths and bytes, entrypoint, engine, compiler image version). A repeat compile of the same input returns the earlier PDF with `X-Compile-Cached: true` and does not count towards your compile time. Pass `force` to bypass it, for example after changing a timeout to chase an intermittent failure.

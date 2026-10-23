@@ -1,0 +1,105 @@
+---
+title: TypeScript SDK
+description: "@jibaru/latex-api-sdk: a typed client generated from the OpenAPI document, for Node and browsers."
+---
+
+```bash
+npm install @jibaru/latex-api-sdk
+```
+
+The package is ESM-only, ships types, and works on Node 20+, Bun, Deno and modern browsers. It is generated from the OpenAPI document, so every request and response type matches the [API reference](/docs/api).
+
+## Client
+
+```ts
+import { LatexApi } from "@jibaru/latex-api-sdk";
+
+const api = new LatexApi({
+  apiKey: process.env.LATEX_API_KEY!,          // sent as Authorization: Bearer
+  baseUrl: "https://latex-api.crafter.run",    // default
+});
+```
+
+## Compile synchronously
+
+```ts
+const pdf = await api.compile({
+  engine: "xelatex",
+  entrypoint: "main.tex",
+  files: [
+    { path: "main.tex", content: source },
+    { path: "figures/logo.png", content: logoBase64, encoding: "base64" },
+  ],
+  options: { bibliography: "auto", timeoutMs: 60_000 },
+});
+// pdf is a Uint8Array
+```
+
+Compile errors are thrown as `CompileError` with the parsed diagnostics; other problems as `ApiError`:
+
+```ts
+import { ApiError, CompileError } from "@jibaru/latex-api-sdk";
+
+try {
+  await api.compile({ files });
+} catch (err) {
+  if (err instanceof CompileError) {
+    for (const d of err.diagnostics) console.error(`${d.file}:${d.line} ${d.message}`);
+    console.error("full log:", err.logUrl);
+  } else if (err instanceof ApiError) {
+    console.error(err.status, err.problem.code, err.problem.detail);
+  } else throw err;
+}
+```
+
+## Jobs
+
+```ts
+const job = await api.jobs.create({ files, options: { timeoutMs: 300_000 } });
+
+// Wait for a terminal status (polls, or streams events when available)
+const done = await api.jobs.wait(job.id);
+if (done.status === "succeeded") {
+  const pdf = await api.jobs.pdf(job.id);   // Uint8Array
+  const log = await api.jobs.log(job.id);   // string
+}
+
+// Or follow the events yourself
+for await (const event of api.jobs.events(job.id)) {
+  if (event.type === "log") process.stdout.write(event.chunk);
+  if (event.type === "done" || event.type === "error") break;
+}
+
+await api.jobs.get(job.id);
+await api.jobs.cancel(job.id);
+```
+
+## Templates
+
+```ts
+const { templates } = await api.templates.list();
+const template = await api.templates.get("ieee-conference");
+const pdf = await api.templates.compile("ieee-conference", {
+  files: [{ path: "main.tex", content: myPaper }],
+});
+const job = await api.templates.createJob("cv-awesome", { files });
+```
+
+## Meta
+
+```ts
+await api.limits();  // { maxUploadBytes, syncTimeoutMs, ... }
+await api.health();  // { status: "ok", version, checks }
+```
+
+## Node notes
+
+- Read files with `fs/promises`; pass binaries as base64 with `encoding: "base64"`, or let `api.compileDirectory("./paper")` zip a folder for you (respects `.gitignore` and `.latexapiignore`).
+- `fetch` from Node 20 is used; pass `fetch` in the constructor to use another implementation or to add a proxy.
+- Write the result with `writeFile("out.pdf", pdf)`.
+
+## Browser notes
+
+- The API allows CORS, so the client works in the browser, but a key in client code is public. Put a thin server in front, or use the demo endpoint for anonymous use.
+- Turn the `Uint8Array` into a `Blob` to display it: `URL.createObjectURL(new Blob([pdf], { type: "application/pdf" }))`.
+- `jobs.events()` uses `fetch` with a streaming reader rather than `EventSource`, so the `Authorization` header is sent.

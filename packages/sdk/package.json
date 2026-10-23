@@ -1,0 +1,73 @@
+{
+  "name": "@jibaru/latex-api-sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for the LaTeX API: compile LaTeX projects to PDF over HTTP from Node, browsers and edge runtimes.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jibaru/latex-api.git",
+    "directory": "packages/sdk"
+  },
+  "homepage": "https://github.com/jibaru/latex-api#readme",
+  "bugs": {
+    "url": "https://github.com/jibaru/latex-api/issues"
+  },
+  "keywords": [
+    "latex",
+    "pdf",
+    "tex",
+    "pdflatex",
+    "xelatex",
+    "lualatex",
+    "compile",
+    "api",
+    "sdk",
+    "typescript"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    },
+    "./raw": {
+      "types": "./dist/raw.d.mts",
+      "import": "./dist/raw.mjs",
+      "default": "./dist/raw.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "generate": "openapi-ts",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
+  },
+  "dependencies": {
+    "fflate": "^0.8.3"
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "^0.99.0",
+    "@latex-api/config": "workspace:*",
+    "@types/node": "^22.0.0",
+    "tsdown": "^0.23.1",
+    "typescript": "^5.9.0",
+    "vitest": "^5.0.5"
+  }
+}

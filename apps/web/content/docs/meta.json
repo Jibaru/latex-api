@@ -1,0 +1,25 @@
+{
+  "title": "Documentation",
+  "root": true,
+  "pages": [
+    "index",
+    "quickstart",
+    "authentication",
+    "---Guides---",
+    "compile",
+    "jobs",
+    "projects",
+    "diagnostics",
+    "templates",
+    "errors",
+    "limits",
+    "---Tools---",
+    "sdk",
+    "cli",
+    "---Operating---",
+    "self-hosting",
+    "security",
+    "---Reference---",
+    "api"
+  ]
+}

@@ -1,0 +1,41 @@
+---
+title: Security
+description: The sandbox model, what it protects against and what you should not expect from it.
+---
+
+LaTeX is a programming language, so a compile is arbitrary code execution. The server treats every compile as hostile and isolates it accordingly.
+
+## The sandbox
+
+Every compile runs in a fresh container from the compiler image, started by the API through the Docker socket and removed afterwards:
+
+| Control                       | Setting                                                   |
+| ----------------------------- | --------------------------------------------------------- |
+| Network                       | `--network none`: no DNS, no outbound, no inbound          |
+| Filesystem                    | Read-only root; the project is mounted at `/work`, output goes to `/work/out`; `/tmp` is a size-limited tmpfs |
+| User                          | uid/gid 65534 (`nobody`), `--cap-drop ALL`, `no-new-privileges` |
+| Syscalls                      | seccomp profile derived from Overleaf's CLSI sandbox       |
+| Resources                     | 2 GB memory (no swap), 2 CPUs, 64 processes, file-size and CPU-time ulimits |
+| Time                          | `timeout -s KILL` at the job timeout, plus the API's own deadline |
+| TeX configuration             | `shell_escape=f`, `openout_any=p`: no subprocesses, no writes outside the work directory |
+| Optional                      | gVisor (`runsc`) as a second kernel boundary               |
+
+Projects are validated before they reach the container: no `..`, no absolute paths, no symlinks from zips, size and count limits.
+
+## Isolation between tenants
+
+- Jobs are scoped to the API key that created them; other keys get `404`.
+- The content-addressed cache is keyed by the full project hash. Two keys sending byte-identical projects share a PDF, which is by design; nothing else is shared.
+- Artifacts live under `DATA_DIR/artifacts/<jobId>/` and are deleted after the TTL.
+
+## What you should not expect
+
+- **Confidentiality from the operator.** The operator can read everything you upload and every PDF produced. Do not send documents you would not email to them; self-host for sensitive material.
+- **Secrecy of keys in browsers.** Anything you ship to a browser is public. Use a proxy with your own authentication.
+- **Protection against resource exhaustion by you.** A document that loops forever is killed at the timeout and counted against your rate limit.
+- **Reproducible output across image versions.** The compiler image is updated with TeX Live; the cache is keyed by image version, so a new image recompiles.
+- **Persistent storage.** Artifacts expire; keep your PDFs.
+
+## Reporting
+
+Found a way out of the sandbox or into another tenant's data? Please email the maintainer privately (address in the [GitHub profile](https://github.com/jibaru)) rather than opening a public issue.

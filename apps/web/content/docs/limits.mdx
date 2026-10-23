@@ -1,0 +1,62 @@
+---
+title: Limits
+description: The limits an instance enforces, where to read them and the environment variables that set them.
+---
+
+Limits differ per instance. Read the effective values from the public endpoint:
+
+```bash
+curl https://latex-api.crafter.run/v1/limits
+```
+
+```json
+{
+  "maxUploadBytes": 52428800,
+  "maxUnpackedBytes": 209715200,
+  "maxFiles": 500,
+  "maxFileBytes": 52428800,
+  "syncTimeoutMs": 60000,
+  "jobTimeoutMs": 300000,
+  "jobTimeoutMaxMs": 600000,
+  "jobMemoryBytes": 2147483648,
+  "jobCpus": 2,
+  "artifactTtlHours": 24,
+  "rateLimitPerKeyPerHour": 60,
+  "rateLimitConcurrentPerKey": 5,
+  "engines": ["pdflatex", "xelatex", "lualatex"]
+}
+```
+
+## Reference
+
+| Field                       | Default | Environment variable             | Applies to                                     |
+| --------------------------- | ------- | -------------------------------- | ---------------------------------------------- |
+| `maxUploadBytes`            | 50 MB   | `MAX_UPLOAD_BYTES`               | Raw request body (JSON, multipart, zip, tex)   |
+| `maxUnpackedBytes`          | 200 MB  | `MAX_UNPACKED_BYTES`             | Sum of all files after decoding / unzipping    |
+| `maxFiles`                  | 500     | `MAX_FILES`                      | Files per project                              |
+| `maxFileBytes`              | 50 MB   | (same as upload)                 | One file                                       |
+| `syncTimeoutMs`             | 60 000  | `SYNC_TIMEOUT_MS`                | `POST /v1/compile`, `/templates/{id}/compile`  |
+| `jobTimeoutMs`              | 300 000 | `JOB_TIMEOUT_MS`                 | Default for jobs when `timeoutMs` is omitted   |
+| `jobTimeoutMaxMs`           | 600 000 | `JOB_TIMEOUT_MAX_MS`             | Highest `timeoutMs` a job may request          |
+| `jobMemoryBytes`            | 2 GB    | `JOB_MEMORY`                     | Container memory (and swap) limit              |
+| `jobCpus`                   | 2       | `JOB_CPUS`                       | Container CPU quota                            |
+| n/a                         | 64      | `JOB_PIDS`                       | Processes inside the container                 |
+| n/a                         | 2       | `MAX_CONCURRENT_JOBS`            | Compiles running at once on the instance       |
+| `artifactTtlHours`          | 24      | `ARTIFACT_TTL_HOURS`             | How long jobs, PDFs and logs are kept          |
+| `rateLimitPerKeyPerHour`    | 60      | `RATE_LIMIT_PER_KEY_PER_HOUR`    | Compiles per key in a rolling hour             |
+| `rateLimitConcurrentPerKey` | 5       | `RATE_LIMIT_CONCURRENT_PER_KEY`  | Running compiles per key                       |
+| n/a                         | 5 / 30  | `DEMO_RATE_LIMIT_PER_MINUTE`, `DEMO_RATE_LIMIT_PER_DAY` | Demo endpoint, per IP      |
+
+Sizes accept suffixes in the environment (`50MB`, `2GB`).
+
+The demo endpoint additionally caps projects at 20 files, 2 MB in total and 1 MB per file, with a 30 s timeout.
+
+## When you hit one
+
+| Symptom                                   | Code                  | What to do                                         |
+| ----------------------------------------- | --------------------- | -------------------------------------------------- |
+| `413 payload_too_large`                   | upload / unpacked / files | Compress images, drop build artifacts from the zip |
+| `408 timeout` on `/v1/compile`            | `syncTimeoutMs`       | Use `/v1/jobs` with a larger `timeoutMs`           |
+| Job `timed_out`                           | `jobTimeoutMaxMs`     | Split the document or ask the operator             |
+| `429 rate_limited`                        | per key               | Wait `Retry-After` seconds; batch with jobs        |
+| Container killed, empty log               | `JOB_MEMORY`          | Large TikZ/pgfplots; externalise is unavailable, simplify |

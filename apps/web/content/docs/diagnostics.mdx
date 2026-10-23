@@ -1,0 +1,75 @@
+---
+title: Diagnostics
+description: The structure of parsed log messages and how they map to HTTP statuses.
+---
+
+Every compile parses the LaTeX log into a list of diagnostics. They appear in the JSON envelope (`result.diagnostics`), in `422` problem bodies, and the counts in `result.errors`, `result.warnings` and the `X-Compile-Warnings` header.
+
+## `Diagnostic`
+
+```json
+{
+  "severity": "error",
+  "message": "Undefined control sequence.",
+  "file": "sections/intro.tex",
+  "line": 12,
+  "context": "l.12 \\foo\n         bar",
+  "source": "latex"
+}
+```
+
+| Field      | Type                                | Notes                                             |
+| ---------- | ----------------------------------- | ------------------------------------------------- |
+| `severity` | `"error"`, `"warning"`, `"info"`    | Always present                                    |
+| `message`  | string                              | Always present, one line                          |
+| `file`     | string                              | Project-relative path when known                  |
+| `line`     | integer                             | From `-file-line-error` output when known         |
+| `context`  | string                              | A few extra log lines around the message          |
+| `source`   | string                              | Package or class that emitted it, e.g. `hyperref` |
+
+## What is detected
+
+- Engine errors in `file:line: message` form.
+- `Undefined control sequence`, `Missing $ inserted`, `File ... not found`, `Package X Error` and `Class X Error` blocks.
+- Overfull and underfull boxes, undefined references and citations, package warnings (`LaTeX Warning`, `Package X Warning`).
+- latexmk and bibtex/biber failures.
+
+Anything the parser does not understand stays in the raw log, which you can always download from `logUrl`.
+
+## Mapping to statuses
+
+| Situation                                  | Sync (`/v1/compile`)                       | Job (`/v1/jobs/{id}`)                          |
+| ------------------------------------------ | ------------------------------------------ | ---------------------------------------------- |
+| PDF produced, no errors                    | `200` with the PDF; warnings in the header | `status: "succeeded"`                          |
+| LaTeX errors (exit code not 0 or errors parsed) | `422 compile_failed` with `diagnostics`, `logUrl`, maybe `pdfUrl` | `status: "failed"`, `error.reason: "compile_failed"` |
+| Killed at the timeout                      | `408 timeout` with partial `diagnostics`   | `status: "timed_out"`, `error.reason: "timeout"` |
+| Cancelled                                  | n/a                                        | `status: "cancelled"`                          |
+| Container could not start                  | `503 compiler_unavailable`                 | `status: "failed"`, `error.reason: "internal"` |
+
+A `422` body looks like this:
+
+```json
+{
+  "type": "https://latex-api.crafter.run/docs/errors#compile_failed",
+  "title": "Compilation failed",
+  "status": 422,
+  "detail": "LaTeX reported 2 errors",
+  "code": "compile_failed",
+  "jobId": "2d2ea4f9-5a4d-4d8f-8e4d-0e7b6a7a9c31",
+  "errors": 2,
+  "warnings": 1,
+  "diagnostics": [
+    { "severity": "error", "message": "Undefined control sequence.", "file": "main.tex", "line": 7, "context": "l.7 \\foo" },
+    { "severity": "error", "message": "Missing $ inserted.", "file": "main.tex", "line": 9 },
+    { "severity": "warning", "message": "Overfull \\hbox (12.3pt too wide) in paragraph at lines 15--16", "file": "main.tex", "line": 15 }
+  ],
+  "logUrl": "https://latex-api.crafter.run/v1/jobs/2d2ea4f9-.../log",
+  "pdfUrl": "https://latex-api.crafter.run/v1/jobs/2d2ea4f9-.../pdf"
+}
+```
+
+## Tips
+
+- Treat `422` as a normal outcome: show the diagnostics to your users with the file and line. Warnings never fail a compile.
+- `halt-on-error` stops at the first error, so a `422` usually lists one error and the warnings before it. Fix it and compile again.
+- Keep `X-Job-Id` (or `jobId`) around: the full log stays at `/v1/jobs/{id}/log` for 24 h.

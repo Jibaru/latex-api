@@ -1,0 +1,161 @@
+---
+title: Jobs (async)
+description: Create a job, poll it, stream events over SSE or receive a webhook, then download the artifacts.
+---
+
+`POST /v1/jobs` accepts exactly the same bodies as [`/v1/compile`](/docs/compile) and returns immediately. Jobs may run for up to 10 minutes (default 5) instead of the 60 s synchronous cap, and they survive a dropped connection.
+
+## Create
+
+```bash
+curl -i https://latex-api.crafter.run/v1/jobs \
+  -H "Authorization: Bearer $LATEX_API_KEY" \
+  -H "Content-Type: application/zip" \
+  --data-binary @thesis.zip
+```
+
+```http
+HTTP/1.1 202 Accepted
+Location: https://latex-api.crafter.run/v1/jobs/9b8d0f5c-1c3a-4d5e-9a2f-6f2a7c1e3b44
+Content-Type: application/json
+```
+
+```json
+{
+  "job": {
+    "id": "9b8d0f5c-1c3a-4d5e-9a2f-6f2a7c1e3b44",
+    "status": "queued",
+    "mode": "async",
+    "engine": "pdflatex",
+    "entrypoint": "main.tex",
+    "createdAt": "2026-10-22T14:03:11.402Z",
+    "expiresAt": "2026-10-23T14:03:11.402Z",
+    "options": { "timeoutMs": 300000, "bibliography": "auto" },
+    "links": {
+      "self": "https://latex-api.crafter.run/v1/jobs/9b8d0f5c-...",
+      "events": "https://latex-api.crafter.run/v1/jobs/9b8d0f5c-.../events"
+    }
+  }
+}
+```
+
+If the same project was compiled before, the cache answers and the job is returned already `succeeded`, with `result` filled in.
+
+Options are those of a compile plus `webhookUrl`:
+
+```json
+{
+  "files": [{ "path": "main.tex", "content": "..." }],
+  "options": { "timeoutMs": 600000, "webhookUrl": "https://example.com/hooks/latex" }
+}
+```
+
+## Status values
+
+| `status`    | Meaning                                                  |
+| ----------- | -------------------------------------------------------- |
+| `queued`    | Waiting for a compile slot                               |
+| `running`   | The container is up                                      |
+| `succeeded` | A PDF was produced; `result.pdfUrl` is set                |
+| `failed`    | LaTeX reported errors; `error.reason` is `compile_failed` |
+| `timed_out` | Killed at `options.timeoutMs`                            |
+| `cancelled` | Cancelled through `DELETE`                               |
+
+`succeeded`, `failed`, `timed_out` and `cancelled` are terminal.
+
+## Poll
+
+```bash
+curl https://latex-api.crafter.run/v1/jobs/9b8d0f5c-1c3a-4d5e-9a2f-6f2a7c1e3b44 \
+  -H "Authorization: Bearer $LATEX_API_KEY"
+```
+
+Returns the same envelope. When terminal, `result` carries `diagnostics`, `errors`, `warnings`, `durationMs`, `pages`, `pdfBytes`, `pdfUrl` and `logUrl`; a failed job also has `error: { reason, message }`. Unknown ids (or ids created by another key) return `404 job_not_found`.
+
+## Stream events (SSE)
+
+```bash
+curl -N https://latex-api.crafter.run/v1/jobs/9b8d0f5c-1c3a-4d5e-9a2f-6f2a7c1e3b44/events \
+  -H "Authorization: Bearer $LATEX_API_KEY"
+```
+
+The response is `text/event-stream`. Each event's `data` is a JSON object with `type`, `jobId` and `at`:
+
+```text
+event: queued
+id: 1
+data: {"type":"queued","jobId":"9b8d0f5c-...","at":"2026-10-22T14:03:11.402Z"}
+
+event: running
+id: 2
+data: {"type":"running","jobId":"9b8d0f5c-...","at":"2026-10-22T14:03:12.018Z"}
+
+event: log
+id: 3
+data: {"type":"log","jobId":"9b8d0f5c-...","at":"2026-10-22T14:03:12.410Z","chunk":"Latexmk: applying rule 'pdflatex'...\n"}
+
+event: ping
+data: 2026-10-22T14:03:14.000Z
+
+event: done
+id: 4
+data: {"type":"done","jobId":"9b8d0f5c-...","at":"2026-10-22T14:03:19.771Z","status":"succeeded"}
+```
+
+| Event     | Payload                                   |
+| --------- | ----------------------------------------- |
+| `queued`  | `{ type, jobId, at }`                     |
+| `running` | `{ type, jobId, at }`                     |
+| `log`     | `{ type, jobId, at, chunk }` compiler output |
+| `done`    | `{ type, jobId, at, status: "succeeded" }` |
+| `error`   | `{ type, jobId, at, status, message }` for `failed`, `timed_out`, `cancelled` |
+| `ping`    | ISO timestamp, every 2 s while idle        |
+
+The stream replays recent history on connect, so reconnecting is safe, and closes after `done` or `error`. Connections are dropped after 15 minutes; reconnect if your job is still running.
+
+With `EventSource` in the browser you cannot set headers, so use `fetch` with a streaming body reader, or the SDK's `jobs.events()`.
+
+## Webhooks
+
+When `options.webhookUrl` is set, the server POSTs once at the end:
+
+```json
+{
+  "event": "job.succeeded",
+  "job": {
+    "id": "9b8d0f5c-1c3a-4d5e-9a2f-6f2a7c1e3b44",
+    "status": "succeeded",
+    "engine": "pdflatex",
+    "createdAt": "2026-10-22T14:03:11.402Z",
+    "finishedAt": "2026-10-22T14:03:19.771Z",
+    "errors": 0,
+    "warnings": 2,
+    "durationMs": 7420,
+    "cached": false
+  }
+}
+```
+
+`event` is `job.succeeded` or `job.failed` (the latter also for time-outs, with `job.error` set). Fetch the PDF from `/v1/jobs/{id}/pdf` with your key; the payload is deliberately small. Answer with any 2xx; there is no retry.
+
+## Cancel
+
+```bash
+curl -X DELETE https://latex-api.crafter.run/v1/jobs/9b8d0f5c-1c3a-4d5e-9a2f-6f2a7c1e3b44 \
+  -H "Authorization: Bearer $LATEX_API_KEY"
+```
+
+Returns `200` with the job (`status: "cancelled"`) when it was queued or running, and `409 job_not_cancellable` when it had already finished. A running compile's container is killed.
+
+## Artifacts
+
+| Route                        | Returns                                                    |
+| ---------------------------- | ---------------------------------------------------------- |
+| `GET /v1/jobs/{id}/pdf`      | `application/pdf`, inline; add `?download=1` for attachment |
+| `GET /v1/jobs/{id}/log`      | `text/plain`, the complete latexmk/engine log               |
+
+Both need the key that created the job. A failed job may still have a PDF when LaTeX managed to write one.
+
+## Expiry
+
+Jobs and their artifacts are kept for `ARTIFACT_TTL_HOURS` (24 by default); `expiresAt` tells you when. After that the id returns `404` and the files are gone. Store the PDF on your side if you need it longer.

@@ -1,0 +1,76 @@
+---
+title: Authentication
+description: API keys, public endpoints and the per-key rate limits.
+---
+
+## Sending a key
+
+Every route under `/v1` except the public ones below requires an API key. Send it either as a bearer token or in `X-API-Key`; both are equivalent.
+
+```http
+Authorization: Bearer sk_live_...
+```
+
+```http
+X-API-Key: sk_live_...
+```
+
+A missing or unknown key gets `401` with code `unauthorized`:
+
+```json
+{
+  "type": "https://latex-api.crafter.run/docs/errors#unauthorized",
+  "title": "Unauthorized",
+  "status": 401,
+  "detail": "Missing or invalid API key",
+  "instance": "/v1/compile",
+  "code": "unauthorized"
+}
+```
+
+## How keys are issued
+
+There is no sign-up. The operator of an instance defines keys in the `API_KEYS` environment variable as a comma-separated list of `name:secret` pairs:
+
+```bash
+API_KEYS="alice:sk_live_8f3a...,ci:sk_live_02c1..."
+```
+
+The name identifies the key in logs and in the `createdBy` of jobs; the secret is what you send. Jobs are scoped to the key that created them: another key gets `404 job_not_found` for your job ids.
+
+To use the public instance, ask the maintainer on [GitHub](https://github.com/jibaru/latex-api) for a key, or [self-host](/docs/self-hosting) and mint your own.
+
+## Public endpoints
+
+These need no key:
+
+| Route                                | Purpose                               |
+| ------------------------------------ | ------------------------------------- |
+| `GET /health`                        | Health check                          |
+| `GET /openapi.json`                  | OpenAPI 3.1 document                  |
+| `GET /v1/limits`                     | Effective limits of this instance     |
+| `GET /v1/templates` and sub-routes   | Catalog, files, archive, preview      |
+| `POST /v1/demo/compile`              | Playground compile, rate limited by IP |
+
+`POST /v1/templates/:id/compile` and `/jobs` do need a key.
+
+## Rate limits
+
+Per key, by default:
+
+- **60 compiles per rolling hour** (`RATE_LIMIT_PER_KEY_PER_HOUR`)
+- **5 compiles running at the same time** (`RATE_LIMIT_CONCURRENT_PER_KEY`)
+
+Over the limit you receive `429 rate_limited` with a `Retry-After` header in seconds:
+
+```http
+HTTP/1.1 429 Too Many Requests
+Content-Type: application/problem+json
+Retry-After: 37
+```
+
+The demo endpoint is limited per IP address instead: 5 compiles a minute and 30 a day.
+
+## CORS
+
+CORS is enabled for every origin on `/v1`, with `Authorization`, `Content-Type`, `Accept` and `X-API-Key` allowed and `X-Job-Id`, `X-Compile-Cached`, `X-Compile-Warnings`, `Location` and `Retry-After` exposed. Calling the API from a browser works, but remember a key in browser code is public. Prefer a small server-side proxy, or the demo endpoint for anything anonymous.
