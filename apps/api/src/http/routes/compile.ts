@@ -74,11 +74,9 @@ export const compileRoute = createRoute({
         "X-Job-Id": z.string(),
         "X-Compile-Cached": z.string(),
         "X-Compile-Warnings": z.string(),
-        "X-Compile-Duration-Ms": z
-          .string()
-          .openapi({
-            description: "Time spent compiling for this request; 0 when served from cache",
-          }),
+        "X-Compile-Duration-Ms": z.string().openapi({
+          description: "Time spent compiling for this request; 0 when served from cache",
+        }),
       }),
     },
     400: {
