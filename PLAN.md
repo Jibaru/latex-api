@@ -165,3 +165,12 @@ Pendiente, requiere acción del dueño:
 - `NPM_TOKEN` para publicar `@jibaru/latex-api-sdk` y `@jibaru/latex-api-cli` (la release los salta mientras falte).
 - Binarios de la CLI con Bun (`packages/cli/scripts/build-binaries.sh`) y release en GitHub.
 - Concurrencia: `MAX_CONCURRENT_JOBS=2` hasta conocer CPU/RAM del VPS.
+
+## 12. Cuentas y CLI 0.2 (2026-10-23)
+
+Hecho y verificado en producción con navegador real y la CLI real:
+- Registro e inicio de sesión con Clerk (GitHub, Google, email), dashboard con jobs recientes, gestión de tokens personales `lta_...` (revocables, expiración opcional) y `/cli/authorize`.
+- `latex-api auth login` por flujo de dispositivo, perfiles múltiples, secretos en el keychain del sistema, sobre JSON único para agentes, `schema`, `doctor`, skill versionada en `skills/latex-api/SKILL.md` e instalable con `latex-api skill install`.
+- Bug corregido: los errores de dominio daban 500 en producción por clases duplicadas entre bundles de Next.js.
+
+Pendiente del dueño: instancia de producción de Clerk (`clerk deploy`, requiere DNS) — hoy corre la instancia de desarrollo; `NPM_TOKEN` para publicar SDK y CLI 0.2.0.
