@@ -833,6 +833,48 @@
       "name": "epoll_pwait",
       "action": "SCMP_ACT_ALLOW",
       "args": []
+    },
+    {
+      "names": [
+        "statx",
+        "faccessat2",
+        "openat2",
+        "close_range",
+        "epoll_pwait2",
+        "rseq",
+        "pidfd_open",
+        "pidfd_send_signal",
+        "membarrier",
+        "futex_waitv",
+        "fchownat",
+        "setpgid",
+        "nanosleep",
+        "poll",
+        "ppoll",
+        "select",
+        "pselect6",
+        "epoll_create1",
+        "epoll_ctl",
+        "epoll_wait",
+        "eventfd2",
+        "setsid",
+        "setrlimit",
+        "timerfd_create",
+        "timerfd_settime",
+        "signalfd4",
+        "socketpair"
+      ],
+      "action": "SCMP_ACT_ALLOW",
+      "args": [],
+      "comment": "latex-api: syscalls needed by modern runc/glibc/perl (statx, clone3, ...)"
+    },
+    {
+      "names": ["clone3"],
+      "action": "SCMP_ACT_ERRNO",
+      "errnoRet": 38,
+      "args": [],
+      "comment": "latex-api: force glibc to fall back to clone(), which is filtered against namespace flags"
     }
-  ]
+  ],
+  "_latex_api_note": "Based on Overleaf CLSI seccomp profile (AGPL-licensed project, profile data only); extended with modern syscalls."
 }

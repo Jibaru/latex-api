@@ -24,6 +24,7 @@ run("DockerSiblingCompiler (integration)", () => {
       limits: { ...DEFAULT_LIMITS, jobCpus: 2 },
       workspaces,
       logger: createLogger("silent"),
+      seccompProfile: path.resolve(__dirname, "../../../docker/seccomp/clsi-profile.json"),
       user:
         process.platform === "win32"
           ? "1000:1000"
