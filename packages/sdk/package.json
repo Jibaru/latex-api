@@ -1,6 +1,6 @@
 {
   "name": "@jibaru/latex-api-sdk",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "TypeScript SDK for the LaTeX API: compile LaTeX projects to PDF over HTTP from Node, browsers and edge runtimes.",
   "type": "module",
   "license": "MIT",

@@ -34,8 +34,20 @@ export async function runCompile(
       signal,
     );
 
-    const fullLog = output.log.length > 0 ? output.log : output.stdout;
-    const diagnostics = parseLatexLog(fullLog);
+    // The TeX log never mentions biber or latexmk failures; those only reach stdout.
+    const fullLog =
+      output.log.length > 0
+        ? output.stdout.trim().length > 0
+          ? `${output.log}\n\n===== latexmk output =====\n${output.stdout}`
+          : output.log
+        : output.stdout;
+    const diagnostics = parseLatexLog(output.log.length > 0 ? output.log : output.stdout);
+    if (output.log.length > 0) {
+      const toolErrors = parseLatexLog(output.stdout).filter(
+        (d) => d.severity === "error" && (d.source === "latexmk" || d.source === "biber"),
+      );
+      diagnostics.unshift(...toolErrors);
+    }
     const { errors, warnings } = summarizeDiagnostics(diagnostics);
     const logStored = await artifacts.put(
       artifactKeys.log(job.projectHash),

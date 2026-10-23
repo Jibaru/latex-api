@@ -381,20 +381,55 @@ const waitCommand = leaf({
 
 const logsCommand = leaf({
   name: "logs",
-  description: "Print the full LaTeX log of a job",
-  args: idArg,
+  description: "Print the LaTeX log of a job (latexmk and biber output at the end)",
+  args: {
+    ...idArg,
+    tail: { type: "string", description: "Only the last N lines", valueHint: "n" },
+    grep: {
+      type: "string",
+      description: "Only lines matching this regular expression (case-insensitive)",
+      valueHint: "regex",
+    },
+  },
   contract: {
-    data: t.object({ jobId: t.string(), log: t.string() }),
-    exitCodes: [EXIT.OK, EXIT.AUTH, EXIT.NOT_FOUND],
+    data: t.object({ jobId: t.string(), log: t.string(), totalLines: t.number() }),
+    exitCodes: [EXIT.OK, EXIT.USAGE, EXIT.AUTH, EXIT.NOT_FOUND],
     auth: "required",
     effect: "read",
   },
-  examples: ["latex-api jobs logs 7f1c… | grep -n '^!'"],
+  examples: [
+    "latex-api jobs logs 7f1c… --tail 40",
+    "latex-api jobs logs 7f1c… --grep 'error|undefined|biber'",
+  ],
   async run({ args, app }) {
+    let tail: number | undefined;
+    if (args.tail !== undefined) {
+      tail = Number(args.tail);
+      if (!Number.isInteger(tail) || tail < 1) {
+        throw new CliError("usage", "--tail must be a positive whole number", {
+          exitCode: EXIT.USAGE,
+        });
+      }
+    }
+    let pattern: RegExp | undefined;
+    if (args.grep !== undefined) {
+      try {
+        pattern = new RegExp(String(args.grep), "i");
+      } catch {
+        throw new CliError("usage", `--grep is not a valid regular expression: ${args.grep}`, {
+          exitCode: EXIT.USAGE,
+        });
+      }
+    }
     const { api } = await app.api({ requireAuth: true });
     const id = String(args.id);
     const text = await api.jobs.log(id);
-    return { data: { jobId: id, log: text }, human: (d) => rt().stdout.write(d.log) };
+    let lines = text.split("\n");
+    const totalLines = lines.length;
+    if (pattern) lines = lines.filter((line) => pattern.test(line));
+    if (tail !== undefined) lines = lines.slice(-tail);
+    const log = pattern || tail !== undefined ? `${lines.join("\n")}\n` : text;
+    return { data: { jobId: id, log, totalLines }, human: (d) => rt().stdout.write(d.log) };
   },
 });
 

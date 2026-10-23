@@ -32,7 +32,8 @@ RUN set -eux; \
       latexmk biber ieeetran fontawesome5 fontawesome6 academicons simpleicons \
       roboto sourcesans lato raleway fira firamath inter montserrat \
       lm-math xits libertinus-fonts gnu-freefont \
-      biblatex-ieee biblatex-apa; \
+      biblatex-ieee biblatex-apa \
+      newtx newpx txfonts pxfonts fontaxes kastrup boondox mathalpha stix2-type1 stix2-otf; \
     tlmgr option autobackup 0; \
     rm -rf /opt/texlive/tlpkg/backups /opt/texlive/texmf-dist/doc /opt/texlive/texmf-dist/source
 
@@ -46,6 +47,7 @@ RUN set -eux; \
 # ---- Hardening defaults baked into texmf.cnf (the runtime also disables shell escape).
 RUN set -eux; \
     printf '\n%% latex-api hardening\nshell_escape = f\nopenout_any = p\nopenin_any = a\n' >> /opt/texlive/texmf.cnf; \
+    mkdir -p /var/cache/biber && chmod 1777 /var/cache/biber; \
     useradd --uid 1000 --user-group --no-create-home --shell /usr/sbin/nologin tex
 
 # ---- Warm up formats and font caches with one document per engine.
@@ -66,6 +68,7 @@ ENV HOME=/tmp/home \
     TEXMFVAR=/tmp/home/texmf-var \
     TEXMFCACHE=/opt/texlive/texmf-var:/tmp/home/texmf-var \
     TEXMFCONFIG=/tmp/home/texmf-config \
+    PAR_GLOBAL_TEMP=/var/cache/biber \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8
 USER 1000:1000

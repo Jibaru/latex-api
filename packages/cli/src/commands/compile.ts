@@ -100,6 +100,9 @@ export function printFailure(error: CliError): void {
 export { formatJobFailure };
 
 export interface CompileData {
+  /** Same field as error.details.jobId on failure, so scripts read one place. */
+  jobId: string;
+  entrypoint?: string;
   job: Job | { id: string; status: "succeeded"; cached: boolean; warnings: number };
   pdf: { path: string; bytes: number };
   durationMs: number;
@@ -127,7 +130,7 @@ export function describePayloadTooLarge(error: LatexApiError, context: ReportCon
   const advice =
     context.transport === "single"
       ? "split the document or compile a folder"
-      : "exclude files with .latexapiignore (e.g. figures sources, PDFs, drafts)";
+      : "exclude files with .latexapiignore (.gitignore is already honored; e.g. figure sources, PDFs, drafts)";
   return `${parts.join("; ")}; ${advice}.`;
 }
 
@@ -202,6 +205,8 @@ export async function compileOnce(app: AppContext, opts: CompileOnceOptions): Pr
       await writeOutput(project.outputPath, pdf);
       status.stop();
       return {
+        jobId: job.id,
+        entrypoint: project.entrypoint,
         job,
         pdf: { path: project.outputPath, bytes: pdf.byteLength },
         durationMs: Date.now() - startedAt,
@@ -217,6 +222,8 @@ export async function compileOnce(app: AppContext, opts: CompileOnceOptions): Pr
     });
     status.stop();
     return {
+      jobId: result.jobId,
+      entrypoint: project.entrypoint,
       job: {
         id: result.jobId,
         status: "succeeded",

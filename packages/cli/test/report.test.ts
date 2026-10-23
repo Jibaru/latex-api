@@ -29,13 +29,13 @@ describe("payload too large reporting", () => {
       transport: "zip",
     });
     expect(message).toBe(
-      "Payload too large; zip was 61.20 MB; limit 50.00 MB; exclude files with .latexapiignore (e.g. figures sources, PDFs, drafts).",
+      "Payload too large; zip was 61.20 MB; limit 50.00 MB; exclude files with .latexapiignore (.gitignore is already honored; e.g. figure sources, PDFs, drafts).",
     );
     expect(
       describePayloadTooLarge(tooLarge("Too big"), { uploadBytes: 2048, transport: "single" }),
     ).toBe("Payload too large; file was 2.0 KB; split the document or compile a folder.");
     expect(describePayloadTooLarge(tooLarge("x"), {})).toBe(
-      "Payload too large; exclude files with .latexapiignore (e.g. figures sources, PDFs, drafts).",
+      "Payload too large; exclude files with .latexapiignore (.gitignore is already honored; e.g. figure sources, PDFs, drafts).",
     );
   });
 });

@@ -79,6 +79,22 @@ describe("CompileProject (sync)", () => {
     expect(again.status).toBe("failed");
   });
 
+  it("reports biber failures that only appear in latexmk output", async () => {
+    const deps = makeDeps();
+    deps.compiler.behaviour = () => ({
+      exitCode: 12,
+      timedOut: false,
+      log: "(./main.tex\nPackage biblatex Warning: Please (re)run Biber on the file:\n(biblatex) main\n)",
+      stdout:
+        "Latexmk: Run number 1 of rule 'biber main'\nLatexmk: Error return from 'biber main'\n",
+      durationMs: 10,
+    });
+    const job = await new CompileProject(deps).execute({ project: project(), principal });
+    expect(job.status).toBe("failed");
+    expect(job.error?.message).toBe("Error return from 'biber main'");
+    expect(job.result?.errors).toBe(1);
+  });
+
   it("does not cache timeouts", async () => {
     const deps = makeDeps();
     deps.compiler.behaviour = () => ({

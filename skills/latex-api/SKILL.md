@@ -1,7 +1,7 @@
 ---
 name: latex-api
 description: Compile LaTeX to PDF with the LaTeX API through the `latex-api` CLI. Use when the user wants a PDF from .tex sources (papers, theses, CVs, brochures, posters, letters, slides), wants to start from a LaTeX template, needs to fix LaTeX compile errors from file:line diagnostics, runs long compiles as async jobs, compiles LaTeX in CI, or manages LaTeX API sign-in, personal API tokens and profiles. No local TeX installation is needed.
-version: 0.2.0
+version: 0.2.1
 ---
 
 # latex-api
@@ -105,11 +105,13 @@ Global flags on every command: `--json`, `--profile <name>`, `-q/--quiet`, `-h/-
 latex-api compile paper/ --json > result.json; echo $?
 ```
 
-Exit 1 means LaTeX failed. Read `error.details.diagnostics`: each item is `{severity, file, line, message, context}`, errors first. Open `file` at `line`, fix it, and run the same command again. `error.details.logUrl` (or `latex-api jobs logs <jobId>`) has the full log when a message is unclear. Warnings do not fail the compile; they are counted in `data.job.result.warnings`.
+Exit 1 means LaTeX failed. Read `error.details.diagnostics`: each item is `{severity, file, line, message, context}`, errors first. Open `file` at `line`, fix it, and run the same command again. `error.details.logUrl` (or `latex-api jobs logs <jobId>`) has the full log, with latexmk and biber output at the end; use `--tail 60` or `--grep 'error|undefined|biber'` instead of reading all of it. The job id is `data.jobId` on success and `error.details.jobId` on failure. Warnings do not fail the compile; they are counted in `data.job.result.warnings`.
 
 - A `.tex` file is sent alone. If it uses `\input`, `\includegraphics` or a `.bib`, compile the folder or pass `--with-siblings`.
 - Set the engine with `--engine xelatex` or a `% !TEX program = xelatex` first line (needed for fontspec / system fonts).
-- `payload_too_large` (exit 2): add a `.latexapiignore` (gitignore syntax) to drop build outputs and sources of figures.
+- Folder uploads skip build outputs, `.git/` and everything in the root `.gitignore`. Re-include a git-ignored file with `!path` in `.latexapiignore`.
+- `payload_too_large` (exit 2): add a `.latexapiignore` (gitignore syntax) to drop sources of figures, PDFs and drafts.
+- biblatex projects run biber automatically (`--bibliography auto`), also when `biblatex` is loaded from a `.cls`.
 
 ### Start from a template
 

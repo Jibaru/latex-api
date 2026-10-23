@@ -108,7 +108,12 @@ export class DockerSiblingCompiler implements Compiler {
         NetworkMode: "none",
         ReadonlyRootfs: true,
         Binds: [`${hostDir}:/work:rw`],
-        Tmpfs: { "/tmp": "rw,nosuid,nodev,noexec,size=256m" },
+        // biber is a PAR binary that unpacks itself before running, so it gets its own
+        // exec-capable tmpfs; everything else stays noexec.
+        Tmpfs: {
+          "/tmp": "rw,nosuid,nodev,noexec,size=256m",
+          "/var/cache/biber": "rw,nosuid,nodev,exec,size=128m,mode=1777",
+        },
         Memory: limits.jobMemoryBytes,
         MemorySwap: limits.jobMemoryBytes,
         NanoCpus: Math.round(limits.jobCpus * 1e9),

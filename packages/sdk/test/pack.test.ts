@@ -42,13 +42,13 @@ describe("createIgnoreMatcher", () => {
 
 describe("packDirectory", () => {
   let dir: string;
+  const write = async (rel: string, content: string | Uint8Array) => {
+    const abs = path.join(dir, rel);
+    await fs.mkdir(path.dirname(abs), { recursive: true });
+    await fs.writeFile(abs, content);
+  };
   beforeEach(async () => {
     dir = await fs.mkdtemp(path.join(os.tmpdir(), "latex-sdk-pack-"));
-    const write = async (rel: string, content: string | Uint8Array) => {
-      const abs = path.join(dir, rel);
-      await fs.mkdir(path.dirname(abs), { recursive: true });
-      await fs.writeFile(abs, content);
-    };
     await write("main.tex", "\\input{sections/intro}");
     await write("sections/intro.tex", "Hi");
     await write("refs.bib", "@article{a}");
@@ -88,6 +88,22 @@ describe("packDirectory", () => {
     expect(new TextDecoder().decode(entries["sections/intro.tex"])).toBe("Hi");
     expect(entries["figures/logo.png"]).toEqual(new Uint8Array([0x89, 0x50, 0x4e, 0x47]));
     expect(seen).toHaveLength(4);
+  });
+
+  it("honors the root .gitignore unless disabled, and .latexapiignore can re-include", async () => {
+    await write("literatura/pdfs/paper.pdf", "big");
+    await write(".gitignore", "literatura/pdfs/\nrefs.bib\n");
+    let paths = (await listDirectoryFiles(dir)).map((f) => f.path);
+    expect(paths).not.toContain("literatura/pdfs/paper.pdf");
+    expect(paths).not.toContain("refs.bib");
+    expect(paths).toContain(".gitignore");
+
+    await write(".latexapiignore", "drafts/\nsecret.txt\n!refs.bib\n");
+    paths = (await listDirectoryFiles(dir)).map((f) => f.path);
+    expect(paths).toContain("refs.bib");
+
+    paths = (await listDirectoryFiles(dir, { gitignore: false })).map((f) => f.path);
+    expect(paths).toContain("literatura/pdfs/paper.pdf");
   });
 
   it("fails on empty or missing directories", async () => {

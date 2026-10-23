@@ -4,6 +4,11 @@ import { createIgnoreMatcher, DEFAULT_IGNORE, parseIgnoreFile } from "./ignore";
 export interface PackDirectoryOptions {
   /** Extra gitignore-like patterns, applied after `.latexapiignore` (later patterns win). */
   ignore?: readonly string[];
+  /**
+   * Also honor the root `.gitignore` (read before `.latexapiignore`, so the latter can
+   * re-include with `!pattern`). Default true.
+   */
+  gitignore?: boolean;
   /** Name of the ignore file read from `dir`. Default `.latexapiignore`. */
   ignoreFile?: string | false;
   /** Replace the built-in artifact/VCS exclusions instead of extending them. */
@@ -51,6 +56,10 @@ export async function listDirectoryFiles(
   if (!stat?.isDirectory()) throw new Error(`packDirectory: "${dir}" is not a directory`);
 
   const patterns: string[] = [...(options.defaults ?? DEFAULT_IGNORE)];
+  if (options.gitignore !== false) {
+    const content = await fs.readFile(path.join(root, ".gitignore"), "utf8").catch(() => undefined);
+    if (content !== undefined) patterns.push(...parseIgnoreFile(content));
+  }
   const ignoreFile = options.ignoreFile === undefined ? ".latexapiignore" : options.ignoreFile;
   if (ignoreFile) {
     const content = await fs.readFile(path.join(root, ignoreFile), "utf8").catch(() => undefined);
