@@ -112,6 +112,10 @@ function compile(manifest) {
     "--rm",
     "--network",
     "none",
+    // On Linux the bind mount keeps host ownership: run as the caller so TeX can write.
+    ...(typeof process.getuid === "function"
+      ? ["--user", `${process.getuid()}:${process.getgid()}`]
+      : []),
     "-v",
     `${toDockerPath(dir)}:/work`,
     IMAGE,
