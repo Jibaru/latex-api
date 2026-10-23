@@ -172,18 +172,21 @@ importers:
 
   packages/cli:
     dependencies:
+      '@clack/prompts':
+        specifier: ^1.8.1
+        version: 1.8.1
       '@jibaru/latex-api-sdk':
         specifier: workspace:^
         version: link:../sdk
-      '@napi-rs/keyring':
-        specifier: ^2.1.2
-        version: 2.1.2
       chokidar:
         specifier: ^6.0.0
         version: 6.0.0
       citty:
         specifier: ^0.2.2
         version: 0.2.2
+      consola:
+        specifier: ^3.4.2
+        version: 3.4.2
       fflate:
         specifier: ^0.8.3
         version: 0.8.3
@@ -194,9 +197,6 @@ importers:
       '@latex-api/config':
         specifier: workspace:*
         version: link:../config
-      '@latex-api/openapi':
-        specifier: workspace:^
-        version: link:../openapi
       '@types/node':
         specifier: ^22.0.0
         version: 22.20.5
@@ -1151,82 +1151,6 @@ packages:
   '@mdx-js/mdx@3.1.1':
     resolution: {integrity: sha512-f6ZO2ifpwAQIpzGWaBQT2TXxPv6z3RBzQKpVftEWN78Vl/YweF1uwussDx8ECAXVtr3Rs89fKyG9YlzUs9DyGQ==}
 
-  '@napi-rs/keyring-darwin-arm64@2.1.2':
-    resolution: {integrity: sha512-vsInUWUzWS6/WzR/TFNwmdtmwKWjnnR8TOpvZ/pjjxDAkJB/waz37PWzp2b8AFcw1aCcq2aQ7k2vvbLQy8pTrw==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [darwin]
-
-  '@napi-rs/keyring-darwin-x64@2.1.2':
-    resolution: {integrity: sha512-wQihYroaQ3r++R6u5c9Gj0TCw1l1F53LCb5aLOXfVvT4DsnDnpe7p7VGYo4/33bLe0iqVevtAj+ET3yKCtOlJQ==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [darwin]
-
-  '@napi-rs/keyring-freebsd-x64@2.1.2':
-    resolution: {integrity: sha512-Ve5ha7MbJsq+4TYyXYiTy4IeZOnYxkBB05uH2+nIrEKBkHmyfHttF814EfWAfoJa63KqBhYRXdYJo0o1WVL2sg==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [freebsd]
-
-  '@napi-rs/keyring-linux-arm-gnueabihf@2.1.2':
-    resolution: {integrity: sha512-zxijTnVnTApEyJMjgnLdVQL1g1DAudku/5brrWNDRWj4J0q0nFhUZEtzUA+nY2FvgDjl4s+2YCZYXSTH4TFMUg==}
-    engines: {node: '>= 10'}
-    cpu: [arm]
-    os: [linux]
-
-  '@napi-rs/keyring-linux-arm64-gnu@2.1.2':
-    resolution: {integrity: sha512-PM+SAcl/yGzgGbeeCsKrnlG4T5DBIDjmDqtKm5an1bJz0o0gwSzR3BMiXf04JenkcqascZpdcIReoEvLj0cvCw==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [linux]
-
-  '@napi-rs/keyring-linux-arm64-musl@2.1.2':
-    resolution: {integrity: sha512-+ERS9oyInPCALN957cViBDbYJc724/Q+rZ8ZAz4rOHj4B4v0VR4OAWThdYZgZqD54sZVV0MdyX24qva97hYoAQ==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [linux]
-
-  '@napi-rs/keyring-linux-riscv64-gnu@2.1.2':
-    resolution: {integrity: sha512-pGADtqeT3U1SaFZGjkVsmZVjeNOQx0fr77S+NWszXjZboyaUOLlGKgqG6ssAWzcwxv8uPhKc9Ij17ujNZhSqLw==}
-    engines: {node: '>= 10'}
-    cpu: [riscv64]
-    os: [linux]
-
-  '@napi-rs/keyring-linux-x64-gnu@2.1.2':
-    resolution: {integrity: sha512-Fj5TmTnl2oriuCT5DDEYlhgxYes20uGfgOg10LK9PyPVsI8/PQ1m8I4rq/4A5hkrMtY7wvFb70YmX/yPHDYWvQ==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [linux]
-
-  '@napi-rs/keyring-linux-x64-musl@2.1.2':
-    resolution: {integrity: sha512-C+KhAeU6x2A43FV3dOmMvUraJb8zsC9VZfsunjZ1cgtuAb208TALaUuAY0jThOphXqhyhBJOs2xTCQhOrRkJIw==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [linux]
-
-  '@napi-rs/keyring-win32-arm64-msvc@2.1.2':
-    resolution: {integrity: sha512-kBq80ZZfjXoa5wHG9kgAVhYYjaPOLgHh5ngt7r1ftwFXPXDPXKH7oM2r2j2Q64cs0pVtmodVtn5Q9e6xCwzQUQ==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [win32]
-
-  '@napi-rs/keyring-win32-ia32-msvc@2.1.2':
-    resolution: {integrity: sha512-bhgKvVbWlZ6iR/tmvb2ht6/o0OzarUX9W7hjg+G+eVdGjR1prwtQ9lYo5ZESdn/+zyF1MIFvHkOCGja9YqDcww==}
-    engines: {node: '>= 10'}
-    cpu: [ia32]
-    os: [win32]
-
-  '@napi-rs/keyring-win32-x64-msvc@2.1.2':
-    resolution: {integrity: sha512-yQtFdfuwqM0ezKlYO6r2n44in2LGzd4MC679Ddhvojip3t1hn+q/4I+gJU+cIJQVd5FAZSKNrK4tGfew3UTpAQ==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [win32]
-
-  '@napi-rs/keyring@2.1.2':
-    resolution: {integrity: sha512-9i1SR6tYeQ3o1beLeVMxhN6Fq513m9TZlTs+46+4JgvSNkaFoW9S4WrpV5MjzE+0CzVoC+dZ4RfZDIgW6+afnQ==}
-    engines: {node: '>= 10'}
-
   '@next/env@16.4.2':
     resolution: {integrity: sha512-nTUTFH7G5/J/fmpkjVLegOkqyKOP0CEsJcMsyO4UCYeN1su+YMW/MfaSErnJskL7XM+UDK6aTvslxsRCyya/sA==}
 
@@ -2016,6 +1940,10 @@ packages:
 
   confbox@0.3.1:
     resolution: {integrity: sha512-cKUSoKa8YxFZZSmraVi7onONx3amu77ngK3kGpsYHDH7drPwCRkQE1RYMPlLRrMtnciRj274XNRxcHxnKmDSnA==}
+
+  consola@3.4.2:
+    resolution: {integrity: sha512-5IKcdX0nnYavi6G7TtOhwkYzyjfJlatbjMjuLSfE2kYT5pMDOilZ4OvMhi637CcDICTmz3wARPoyhqyX1Y+XvA==}
+    engines: {node: ^14.18.0 || >=16.10.0}
 
   convert-source-map@1.9.0:
     resolution: {integrity: sha512-ASFBup0Mz1uyiIjANan1jzLQami9z1PoYSZCiiYW2FczPbenXc45FZdBZLzOT+r6+iciuEModtmCti+hjaAk0A==}
@@ -4663,57 +4591,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@napi-rs/keyring-darwin-arm64@2.1.2':
-    optional: true
-
-  '@napi-rs/keyring-darwin-x64@2.1.2':
-    optional: true
-
-  '@napi-rs/keyring-freebsd-x64@2.1.2':
-    optional: true
-
-  '@napi-rs/keyring-linux-arm-gnueabihf@2.1.2':
-    optional: true
-
-  '@napi-rs/keyring-linux-arm64-gnu@2.1.2':
-    optional: true
-
-  '@napi-rs/keyring-linux-arm64-musl@2.1.2':
-    optional: true
-
-  '@napi-rs/keyring-linux-riscv64-gnu@2.1.2':
-    optional: true
-
-  '@napi-rs/keyring-linux-x64-gnu@2.1.2':
-    optional: true
-
-  '@napi-rs/keyring-linux-x64-musl@2.1.2':
-    optional: true
-
-  '@napi-rs/keyring-win32-arm64-msvc@2.1.2':
-    optional: true
-
-  '@napi-rs/keyring-win32-ia32-msvc@2.1.2':
-    optional: true
-
-  '@napi-rs/keyring-win32-x64-msvc@2.1.2':
-    optional: true
-
-  '@napi-rs/keyring@2.1.2':
-    optionalDependencies:
-      '@napi-rs/keyring-darwin-arm64': 2.1.2
-      '@napi-rs/keyring-darwin-x64': 2.1.2
-      '@napi-rs/keyring-freebsd-x64': 2.1.2
-      '@napi-rs/keyring-linux-arm-gnueabihf': 2.1.2
-      '@napi-rs/keyring-linux-arm64-gnu': 2.1.2
-      '@napi-rs/keyring-linux-arm64-musl': 2.1.2
-      '@napi-rs/keyring-linux-riscv64-gnu': 2.1.2
-      '@napi-rs/keyring-linux-x64-gnu': 2.1.2
-      '@napi-rs/keyring-linux-x64-musl': 2.1.2
-      '@napi-rs/keyring-win32-arm64-msvc': 2.1.2
-      '@napi-rs/keyring-win32-ia32-msvc': 2.1.2
-      '@napi-rs/keyring-win32-x64-msvc': 2.1.2
-
   '@next/env@16.4.2': {}
 
   '@next/swc-darwin-arm64@16.4.2':
@@ -5356,6 +5233,8 @@ snapshots:
   confbox@0.2.4: {}
 
   confbox@0.3.1: {}
+
+  consola@3.4.2: {}
 
   convert-source-map@1.9.0: {}
 

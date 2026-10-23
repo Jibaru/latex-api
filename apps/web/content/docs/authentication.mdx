@@ -51,7 +51,7 @@ curl -X DELETE https://latex-api.crafter.run/v1/tokens/tok_... -H "Authorization
 2. Your browser opens `https://latex-api.crafter.run/cli/authorize?code=WDJB-MJHT`. Sign in if needed, check that the code and machine match, pick a lifetime and click **Authorize**.
 3. The CLI polls `POST /v1/auth/device/token` and receives a personal token, which it stores in your OS keychain.
 
-Codes expire after 10 minutes and can be used once. Approval only works from a signed-in browser session; a token cannot approve another device. CLI sign-ins show up under API tokens as "CLI on <hostname>", where you can revoke them.
+Codes expire after 10 minutes and can be used once. Approval only works from a signed-in browser session; a token cannot approve another device. CLI sign-ins show up under API tokens as "CLI on &lt;hostname&gt;", where you can revoke them.
 
 For headless machines, create a token in the dashboard and pipe it in:
 
