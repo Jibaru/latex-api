@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, ServerSentEventsResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteV1JobsByIdData, DeleteV1JobsByIdErrors, DeleteV1JobsByIdResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GetV1JobsByIdData, GetV1JobsByIdErrors, GetV1JobsByIdEventsData, GetV1JobsByIdEventsErrors, GetV1JobsByIdEventsResponse, GetV1JobsByIdEventsResponses, GetV1JobsByIdLogData, GetV1JobsByIdLogErrors, GetV1JobsByIdLogResponses, GetV1JobsByIdPdfData, GetV1JobsByIdPdfErrors, GetV1JobsByIdPdfResponses, GetV1JobsByIdResponses, GetV1LimitsData, GetV1LimitsResponses, GetV1StatsData, GetV1StatsErrors, GetV1StatsResponses, GetV1TemplatesByIdArchiveData, GetV1TemplatesByIdArchiveErrors, GetV1TemplatesByIdArchiveResponses, GetV1TemplatesByIdData, GetV1TemplatesByIdErrors, GetV1TemplatesByIdFilesByPathData, GetV1TemplatesByIdFilesByPathErrors, GetV1TemplatesByIdFilesByPathResponses, GetV1TemplatesByIdPreviewData, GetV1TemplatesByIdPreviewErrors, GetV1TemplatesByIdPreviewResponses, GetV1TemplatesByIdResponses, GetV1TemplatesData, GetV1TemplatesResponses, PostV1CompileData, PostV1CompileErrors, PostV1CompileResponses, PostV1DemoCompileData, PostV1DemoCompileErrors, PostV1DemoCompileResponses, PostV1JobsData, PostV1JobsErrors, PostV1JobsResponses, PostV1TemplatesByIdCompileData, PostV1TemplatesByIdCompileErrors, PostV1TemplatesByIdCompileResponses, PostV1TemplatesByIdJobsData, PostV1TemplatesByIdJobsErrors, PostV1TemplatesByIdJobsResponses } from './types.gen';
+import type { DeleteV1JobsByIdData, DeleteV1JobsByIdErrors, DeleteV1JobsByIdResponses, DeleteV1TokensByIdData, DeleteV1TokensByIdErrors, DeleteV1TokensByIdResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GetV1AuthDeviceByCodeData, GetV1AuthDeviceByCodeErrors, GetV1AuthDeviceByCodeResponses, GetV1JobsByIdData, GetV1JobsByIdErrors, GetV1JobsByIdEventsData, GetV1JobsByIdEventsErrors, GetV1JobsByIdEventsResponse, GetV1JobsByIdEventsResponses, GetV1JobsByIdLogData, GetV1JobsByIdLogErrors, GetV1JobsByIdLogResponses, GetV1JobsByIdPdfData, GetV1JobsByIdPdfErrors, GetV1JobsByIdPdfResponses, GetV1JobsByIdResponses, GetV1JobsData, GetV1JobsResponses, GetV1LimitsData, GetV1LimitsResponses, GetV1MeData, GetV1MeErrors, GetV1MeResponses, GetV1StatsData, GetV1StatsErrors, GetV1StatsResponses, GetV1TemplatesByIdArchiveData, GetV1TemplatesByIdArchiveErrors, GetV1TemplatesByIdArchiveResponses, GetV1TemplatesByIdData, GetV1TemplatesByIdErrors, GetV1TemplatesByIdFilesByPathData, GetV1TemplatesByIdFilesByPathErrors, GetV1TemplatesByIdFilesByPathResponses, GetV1TemplatesByIdPreviewData, GetV1TemplatesByIdPreviewErrors, GetV1TemplatesByIdPreviewResponses, GetV1TemplatesByIdResponses, GetV1TemplatesData, GetV1TemplatesResponses, GetV1TokensData, GetV1TokensErrors, GetV1TokensResponses, PostV1AuthDeviceByCodeApproveData, PostV1AuthDeviceByCodeApproveErrors, PostV1AuthDeviceByCodeApproveResponses, PostV1AuthDeviceByCodeDenyData, PostV1AuthDeviceByCodeDenyErrors, PostV1AuthDeviceByCodeDenyResponses, PostV1AuthDeviceData, PostV1AuthDeviceErrors, PostV1AuthDeviceResponses, PostV1AuthDeviceTokenData, PostV1AuthDeviceTokenErrors, PostV1AuthDeviceTokenResponses, PostV1CompileData, PostV1CompileErrors, PostV1CompileResponses, PostV1DemoCompileData, PostV1DemoCompileErrors, PostV1DemoCompileResponses, PostV1JobsData, PostV1JobsErrors, PostV1JobsResponses, PostV1TemplatesByIdCompileData, PostV1TemplatesByIdCompileErrors, PostV1TemplatesByIdCompileResponses, PostV1TemplatesByIdJobsData, PostV1TemplatesByIdJobsErrors, PostV1TemplatesByIdJobsResponses, PostV1TokensData, PostV1TokensErrors, PostV1TokensResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -52,18 +52,56 @@ export const postV1DemoCompile = <ThrowOnError extends boolean = false>(options:
 });
 
 /**
- * Compile a project synchronously
+ * Who am I
  *
- * Compiles and waits for the result (up to the synchronous timeout). Send JSON, multipart files, a zip or a raw .tex body. Returns the PDF by default; send `Accept: application/json` to get the job envelope with diagnostics instead. Query parameters `engine`, `entrypoint`, `timeoutMs`, `bibliography` and `force` apply to zip and raw bodies.
+ * Returns the identity behind the credential. Useful to validate a token.
  */
-export const postV1Compile = <ThrowOnError extends boolean = false>(options?: Options<PostV1CompileData, ThrowOnError>): RequestResult<PostV1CompileResponses, PostV1CompileErrors, ThrowOnError> => (options?.client ?? client).post<PostV1CompileResponses, PostV1CompileErrors, ThrowOnError>({
+export const getV1Me = <ThrowOnError extends boolean = false>(options?: Options<GetV1MeData, ThrowOnError>): RequestResult<GetV1MeResponses, GetV1MeErrors, ThrowOnError> => (options?.client ?? client).get<GetV1MeResponses, GetV1MeErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/v1/compile',
+    url: '/v1/me',
+    ...options
+});
+
+/**
+ * List your personal API tokens
+ */
+export const getV1Tokens = <ThrowOnError extends boolean = false>(options?: Options<GetV1TokensData, ThrowOnError>): RequestResult<GetV1TokensResponses, GetV1TokensErrors, ThrowOnError> => (options?.client ?? client).get<GetV1TokensResponses, GetV1TokensErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/tokens',
+    ...options
+});
+
+/**
+ * Create a personal API token
+ *
+ * The secret is returned once. Tokens last until revoked or until `expiresInDays`.
+ */
+export const postV1Tokens = <ThrowOnError extends boolean = false>(options: Options<PostV1TokensData, ThrowOnError>): RequestResult<PostV1TokensResponses, PostV1TokensErrors, ThrowOnError> => (options.client ?? client).post<PostV1TokensResponses, PostV1TokensErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/tokens',
     ...options,
     headers: {
         'Content-Type': 'application/json',
-        ...options?.headers
+        ...options.headers
     }
+});
+
+/**
+ * Revoke a personal API token
+ */
+export const deleteV1TokensById = <ThrowOnError extends boolean = false>(options: Options<DeleteV1TokensByIdData, ThrowOnError>): RequestResult<DeleteV1TokensByIdResponses, DeleteV1TokensByIdErrors, ThrowOnError> => (options.client ?? client).delete<DeleteV1TokensByIdResponses, DeleteV1TokensByIdErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/tokens/{id}',
+    ...options
+});
+
+/**
+ * List your recent jobs
+ */
+export const getV1Jobs = <ThrowOnError extends boolean = false>(options?: Options<GetV1JobsData, ThrowOnError>): RequestResult<GetV1JobsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetV1JobsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/jobs',
+    ...options
 });
 
 /**
@@ -74,6 +112,80 @@ export const postV1Compile = <ThrowOnError extends boolean = false>(options?: Op
 export const postV1Jobs = <ThrowOnError extends boolean = false>(options?: Options<PostV1JobsData, ThrowOnError>): RequestResult<PostV1JobsResponses, PostV1JobsErrors, ThrowOnError> => (options?.client ?? client).post<PostV1JobsResponses, PostV1JobsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/jobs',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+/**
+ * Start a CLI sign-in (device flow)
+ *
+ * Returns a `userCode` to show in the terminal and a `deviceCode` to poll with. The user approves at `verificationUriComplete` while signed in.
+ */
+export const postV1AuthDevice = <ThrowOnError extends boolean = false>(options?: Options<PostV1AuthDeviceData, ThrowOnError>): RequestResult<PostV1AuthDeviceResponses, PostV1AuthDeviceErrors, ThrowOnError> => (options?.client ?? client).post<PostV1AuthDeviceResponses, PostV1AuthDeviceErrors, ThrowOnError>({
+    url: '/v1/auth/device',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+/**
+ * Exchange an approved device code for a token
+ *
+ * Poll every `interval` seconds. While pending the response is 428 with code `authorization_pending` (or `slow_down`). Denied → 400 `access_denied`; expired or reused → 400 `expired_token`.
+ */
+export const postV1AuthDeviceToken = <ThrowOnError extends boolean = false>(options: Options<PostV1AuthDeviceTokenData, ThrowOnError>): RequestResult<PostV1AuthDeviceTokenResponses, PostV1AuthDeviceTokenErrors, ThrowOnError> => (options.client ?? client).post<PostV1AuthDeviceTokenResponses, PostV1AuthDeviceTokenErrors, ThrowOnError>({
+    url: '/v1/auth/device/token',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Inspect a pending CLI sign-in (browser session only)
+ */
+export const getV1AuthDeviceByCode = <ThrowOnError extends boolean = false>(options: Options<GetV1AuthDeviceByCodeData, ThrowOnError>): RequestResult<GetV1AuthDeviceByCodeResponses, GetV1AuthDeviceByCodeErrors, ThrowOnError> => (options.client ?? client).get<GetV1AuthDeviceByCodeResponses, GetV1AuthDeviceByCodeErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/auth/device/{code}',
+    ...options
+});
+
+/**
+ * Approve a CLI sign-in (browser session only)
+ */
+export const postV1AuthDeviceByCodeApprove = <ThrowOnError extends boolean = false>(options: Options<PostV1AuthDeviceByCodeApproveData, ThrowOnError>): RequestResult<PostV1AuthDeviceByCodeApproveResponses, PostV1AuthDeviceByCodeApproveErrors, ThrowOnError> => (options.client ?? client).post<PostV1AuthDeviceByCodeApproveResponses, PostV1AuthDeviceByCodeApproveErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/auth/device/{code}/approve',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Deny a CLI sign-in (browser session only)
+ */
+export const postV1AuthDeviceByCodeDeny = <ThrowOnError extends boolean = false>(options: Options<PostV1AuthDeviceByCodeDenyData, ThrowOnError>): RequestResult<PostV1AuthDeviceByCodeDenyResponses, PostV1AuthDeviceByCodeDenyErrors, ThrowOnError> => (options.client ?? client).post<PostV1AuthDeviceByCodeDenyResponses, PostV1AuthDeviceByCodeDenyErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/auth/device/{code}/deny',
+    ...options
+});
+
+/**
+ * Compile a project synchronously
+ *
+ * Compiles and waits for the result (up to the synchronous timeout). Send JSON, multipart files, a zip or a raw .tex body. Returns the PDF by default; send `Accept: application/json` to get the job envelope with diagnostics instead. Query parameters `engine`, `entrypoint`, `timeoutMs`, `bibliography` and `force` apply to zip and raw bodies.
+ */
+export const postV1Compile = <ThrowOnError extends boolean = false>(options?: Options<PostV1CompileData, ThrowOnError>): RequestResult<PostV1CompileResponses, PostV1CompileErrors, ThrowOnError> => (options?.client ?? client).post<PostV1CompileResponses, PostV1CompileErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/compile',
     ...options,
     headers: {
         'Content-Type': 'application/json',

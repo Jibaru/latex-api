@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 import { run } from "./app";
-import { reportError } from "./commands/compile";
-import { EXIT, exitCodeFor } from "./exit";
 
-process.on("unhandledRejection", (error) => {
-  reportError(error, false);
-  process.exit(exitCodeFor(error));
-});
-
-run().then(() => {
-  if (process.exitCode && process.exitCode !== EXIT.OK) process.exit(process.exitCode);
-});
+run().then(
+  (code) => {
+    // Let pending stdout writes flush before exiting (piped output can be asynchronous).
+    process.exitCode = code;
+  },
+  (error: unknown) => {
+    process.stderr.write(`latex-api: unexpected failure: ${String(error)}\n`);
+    process.exitCode = 1;
+  },
+);

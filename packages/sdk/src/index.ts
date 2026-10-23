@@ -1,8 +1,20 @@
 import { type Client, createClient, createConfig } from "./client/client";
 import * as ops from "./client/sdk.gen";
-import type { Health, Job, JobEnvelope, Limits, Stats, Template } from "./client/types.gen";
+import type {
+  ApiToken,
+  CreatedApiToken,
+  DeviceAuthorizationStart,
+  DeviceToken,
+  Health,
+  Job,
+  JobEnvelope,
+  Limits,
+  Me,
+  Stats,
+  Template,
+} from "./client/types.gen";
 import { envVar, isBrowser } from "./encoding";
-import { errorFromRawResponse, errorFromResponse, LatexApiError } from "./errors";
+import { errorFromRawResponse, errorFromResponse, isProblem, LatexApiError } from "./errors";
 import { parseSse, type SseMessage } from "./sse";
 import { type PreparedBody, prepareCompileBody, prepareTemplateBody } from "./transport";
 import {
@@ -11,6 +23,9 @@ import {
   type CompileJsonResult,
   type CompilePdfResult,
   type CompileResult,
+  type CreateTokenInput,
+  type DevicePollResult,
+  type DeviceStartInput,
   type EventsOptions,
   isTerminalStatus,
   type JobEvent,
@@ -20,7 +35,7 @@ import {
   type WaitOptions,
 } from "./types";
 
-export const SDK_VERSION = "0.1.0";
+export const SDK_VERSION = "0.2.0";
 export const DEFAULT_BASE_URL = "https://latex-api.crafter.run";
 
 const BEARER = [{ scheme: "bearer", type: "http" }] as const;
@@ -83,6 +98,18 @@ export class JobsApi {
     const prepared = prepareCompileBody(input);
     const { data } = await this.api.postPrepared("/v1/jobs", {}, prepared, "json", opts.signal);
     return (data as JobEnvelope).job;
+  }
+
+  /** `GET /v1/jobs`: the caller's recent jobs, newest first. */
+  async list(opts: RequestCallOptions & { limit?: number } = {}): Promise<Job[]> {
+    const { data } = unwrap<{ jobs: Job[] }>(
+      await ops.getV1Jobs({
+        client: this.api.client,
+        query: opts.limit === undefined ? undefined : { limit: opts.limit },
+        signal: opts.signal,
+      }),
+    );
+    return data.jobs;
   }
 
   /** `GET /v1/jobs/:id`. */
@@ -363,6 +390,77 @@ export class TemplatesApi {
   }
 }
 
+/** Personal API tokens under `/v1/tokens` (secrets are only returned by `create`). */
+export class TokensApi {
+  constructor(private readonly api: LatexApi) {}
+
+  /** `GET /v1/tokens`: the caller's tokens, newest first. */
+  async list(opts: RequestCallOptions = {}): Promise<ApiToken[]> {
+    const { data } = unwrap<{ tokens: ApiToken[] }>(
+      await ops.getV1Tokens({ client: this.api.client, signal: opts.signal }),
+    );
+    return data.tokens;
+  }
+
+  /**
+   * `POST /v1/tokens`. The secret in `token` is shown once. `expiresInDays: null` (or
+   * omitted) creates a token that never expires.
+   */
+  async create(input: CreateTokenInput, opts: RequestCallOptions = {}): Promise<CreatedApiToken> {
+    const body: { name: string; expiresInDays?: number | null } = { name: input.name };
+    if (input.expiresInDays !== undefined) body.expiresInDays = input.expiresInDays;
+    const { data } = unwrap<CreatedApiToken>(
+      await ops.postV1Tokens({ client: this.api.client, body, signal: opts.signal }),
+    );
+    return data;
+  }
+
+  /** `DELETE /v1/tokens/:id`: revoke a token. Irreversible. */
+  async revoke(id: string, opts: RequestCallOptions = {}): Promise<ApiToken> {
+    const { data } = unwrap<{ apiToken: ApiToken }>(
+      await ops.deleteV1TokensById({ client: this.api.client, path: { id }, signal: opts.signal }),
+    );
+    return data.apiToken;
+  }
+}
+
+/** Device sign-in (RFC 8628 style) under `/v1/auth/device`. These calls send no credential. */
+export class AuthApi {
+  constructor(private readonly api: LatexApi) {}
+
+  /** `POST /v1/auth/device`: start a sign-in and get the code to show to the user. */
+  async startDevice(
+    input: DeviceStartInput = {},
+    opts: RequestCallOptions = {},
+  ): Promise<DeviceAuthorizationStart> {
+    const { data } = unwrap<DeviceAuthorizationStart>(
+      await ops.postV1AuthDevice({ client: this.api.client, body: input, signal: opts.signal }),
+    );
+    return data;
+  }
+
+  /**
+   * `POST /v1/auth/device/token`, once. Resolves `pending` / `slow_down` (with the server's
+   * `interval` when it sent one) or `approved` with the token. Throws `LatexApiError` with
+   * code `access_denied` or `expired_token` (HTTP 400) and for any other failure.
+   */
+  async pollDevice(deviceCode: string, opts: RequestCallOptions = {}): Promise<DevicePollResult> {
+    const result = (await ops.postV1AuthDeviceToken({
+      client: this.api.client,
+      body: { deviceCode },
+      signal: opts.signal,
+    })) as RawResult;
+    if (result.response?.status === 428 && isProblem(result.error)) {
+      const code = result.error.code;
+      const interval =
+        typeof result.error.interval === "number" ? (result.error.interval as number) : undefined;
+      return { status: code === "slow_down" ? "slow_down" : "pending", interval };
+    }
+    const { data } = unwrap<DeviceToken>(result);
+    return { status: "approved", ...data };
+  }
+}
+
 /**
  * Ergonomic client for the LaTeX API.
  *
@@ -376,6 +474,8 @@ export class LatexApi {
   readonly client: Client;
   readonly jobs: JobsApi;
   readonly templates: TemplatesApi;
+  readonly tokens: TokensApi;
+  readonly auth: AuthApi;
   /** @internal */
   readonly fetch: typeof fetch;
   private readonly apiKey: string | undefined;
@@ -386,7 +486,12 @@ export class LatexApi {
       /\/+$/,
       "",
     );
-    this.apiKey = opts.apiKey ?? envVar("LATEX_API_KEY") ?? undefined;
+    this.apiKey =
+      opts.apiKey ??
+      opts.token ??
+      envVar("LATEX_API_TOKEN") ??
+      envVar("LATEX_API_KEY") ??
+      undefined;
     const fetchImpl = opts.fetch ?? globalThis.fetch;
     if (typeof fetchImpl !== "function") {
       throw new TypeError("No fetch implementation available; pass one in `fetch`");
@@ -408,6 +513,8 @@ export class LatexApi {
     );
     this.jobs = new JobsApi(this);
     this.templates = new TemplatesApi(this);
+    this.tokens = new TokensApi(this);
+    this.auth = new AuthApi(this);
   }
 
   /** True when an API key is configured. */
@@ -453,6 +560,11 @@ export class LatexApi {
   /** `GET /v1/limits` (public). */
   async limits(opts: RequestCallOptions = {}): Promise<Limits> {
     return unwrap<Limits>(await ops.getV1Limits({ client: this.client, signal: opts.signal })).data;
+  }
+
+  /** `GET /v1/me`: the identity behind the configured credential (validates a token). */
+  async me(opts: RequestCallOptions = {}): Promise<Me> {
+    return unwrap<Me>(await ops.getV1Me({ client: this.client, signal: opts.signal })).data;
   }
 
   /** `GET /v1/stats` (requires a key). */
@@ -523,19 +635,25 @@ function isHealth(value: unknown): value is Health {
 }
 
 export type {
+  ApiToken,
   CompileFailedProblem,
   CompileRequest,
+  CreatedApiToken,
+  DeviceAuthorizationStart,
+  DeviceToken,
   Diagnostic,
   Health,
   Job,
   JobEnvelope,
   JobResult,
   Limits,
+  Me,
   ProjectFile,
   Stats,
   Template,
   TemplateCompileRequest,
   TemplateFile,
+  User,
 } from "./client/types.gen";
 export type { Problem } from "./errors";
 export { CompileFailedError, isProblem, LatexApiError } from "./errors";

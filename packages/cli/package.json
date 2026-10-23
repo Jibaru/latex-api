@@ -1,7 +1,7 @@
 {
   "name": "@jibaru/latex-api-cli",
-  "version": "0.1.0",
-  "description": "Command-line client for the LaTeX API: compile projects to PDF, watch for changes, run async jobs and scaffold templates.",
+  "version": "0.2.0",
+  "description": "Agent-first command-line client for the LaTeX API: compile projects to PDF, sign in from the terminal, manage tokens and profiles, run async jobs, scaffold templates.",
   "type": "module",
   "license": "MIT",
   "repository": {
@@ -21,7 +21,10 @@
     "compile",
     "pdflatex",
     "xelatex",
-    "lualatex"
+    "lualatex",
+    "agent",
+    "ai-agent",
+    "skill"
   ],
   "bin": {
     "latex-api": "./dist/cli.mjs",
@@ -29,6 +32,7 @@
   },
   "files": [
     "dist",
+    "dist/skill/SKILL.md",
     "README.md"
   ],
   "engines": {
@@ -38,7 +42,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsdown",
+    "build": "tsdown && node scripts/copy-skill.mjs",
     "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -46,16 +50,16 @@
     "build:binaries": "bash scripts/build-binaries.sh"
   },
   "dependencies": {
-    "@clack/prompts": "^1.8.1",
     "@jibaru/latex-api-sdk": "workspace:^",
+    "@napi-rs/keyring": "^2.1.2",
     "chokidar": "^6.0.0",
     "citty": "^0.2.2",
-    "consola": "^3.4.2",
     "fflate": "^0.8.3",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {
     "@latex-api/config": "workspace:*",
+    "@latex-api/openapi": "workspace:^",
     "@types/node": "^22.0.0",
     "tsdown": "^0.23.1",
     "typescript": "^5.9.0",

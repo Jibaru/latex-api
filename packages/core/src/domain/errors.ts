@@ -18,7 +18,14 @@ export type ErrorCode =
   | "expired_token"
   | "internal";
 
+/**
+ * Brand shared across module copies. Next.js bundles route handlers and instrumentation
+ * separately, so the same class can exist twice at runtime and `instanceof` is unreliable.
+ */
+const DOMAIN_ERROR = Symbol.for("latex-api.DomainError");
+
 export class DomainError extends Error {
+  readonly [DOMAIN_ERROR] = true;
   readonly code: ErrorCode;
   readonly status: number;
   readonly details: Record<string, unknown> | undefined;
@@ -94,7 +101,11 @@ export class CompilerUnavailableError extends DomainError {
 }
 
 export function isDomainError(error: unknown): error is DomainError {
-  return error instanceof DomainError;
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as Record<symbol, unknown>)[DOMAIN_ERROR] === true
+  );
 }
 
 export class ForbiddenError extends DomainError {

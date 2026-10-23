@@ -1,41 +1,118 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { listDirectoryFiles, type ProjectFileInput } from "@jibaru/latex-api-sdk";
-import { defineCommand } from "citty";
-import { consola } from "consola";
+import {
+  type Job,
+  listDirectoryFiles,
+  type ProjectFileInput,
+  type Template,
+} from "@jibaru/latex-api-sdk";
 import { unzipSync } from "fflate";
-import pc from "picocolors";
-import { createSession } from "../client";
+import { rt } from "../blocks/runtime";
+import { colors } from "../blocks/style";
+import { group, leaf, t } from "../command";
 import { CliError, EXIT } from "../exit";
+import { appendLedger } from "../ledger";
+import { out, progress } from "../output";
 import { ENGINES, parseCompileOptions, parseEngine } from "../project";
-import { formatBytes, printJson, relativeToCwd, renderTable, writeOutput } from "../ui";
-import { reportError } from "./compile";
+import { formatBytes, plural, relativeToCwd, renderFields, renderTable, writeOutput } from "../ui";
+import { jobFailure, pdfShape } from "./compile";
 
 const idArg = {
   id: { type: "positional", description: "Template id (see `templates list`)", required: true },
 } as const;
 
-const listCommand = defineCommand({
-  meta: { name: "list", description: "List the available templates" },
-  args: { json: { type: "boolean", description: "Print the catalog as JSON" } },
-  async run({ args }) {
-    const session = await createSession();
-    const templates = await session.api.templates.list();
-    if (args.json) {
-      printJson({ templates });
-      return;
-    }
-    if (templates.length === 0) {
-      consola.info("No templates available on this server.");
-      return;
-    }
-    console.log(
-      renderTable(
-        ["id", "category", "engine", "name", "tags"],
-        templates.map((t) => [pc.bold(t.id), t.category, t.engine, t.name, t.tags.join(", ")]),
-      ),
-    );
-    console.log(pc.dim(`\nStart from one with: latex-api templates init <id> [dir]`));
+const listCommand = leaf({
+  name: "list",
+  description: "List the available templates",
+  contract: {
+    data: t.object({ templates: t.array(t.ref("Template")) }),
+    exitCodes: [EXIT.OK, EXIT.AUTH],
+    auth: "none",
+    effect: "read",
+  },
+  examples: [
+    "latex-api templates list",
+    "latex-api templates list --json | jq -r '.data.templates[].id'",
+  ],
+  async run({ app }) {
+    const { api } = await app.api();
+    const templates = await api.templates.list();
+    return {
+      data: { templates },
+      human: (d) => {
+        if (d.templates.length === 0) {
+          out("No templates available on this server.");
+          return;
+        }
+        const c = colors(rt().stdout);
+        const byCategory = new Map<string, typeof d.templates>();
+        for (const template of d.templates) {
+          byCategory.set(template.category, [
+            ...(byCategory.get(template.category) ?? []),
+            template,
+          ]);
+        }
+        for (const [category, items] of byCategory) {
+          out(c.bold(category));
+          out(
+            renderTable(
+              ["id", "engine", "name", "tags"],
+              items.map((tpl: Template) => [
+                c.info(tpl.id),
+                tpl.engine,
+                tpl.name,
+                c.muted(tpl.tags.join(", ")),
+              ]),
+              { maxWidths: { 2: 40, 3: 40 } },
+            )
+              .split("\n")
+              .slice(1)
+              .map((line) => `  ${line}`)
+              .join("\n"),
+          );
+          out("");
+        }
+      },
+      nextSteps: [
+        "latex-api templates init <id> [dir]",
+        "latex-api templates preview <id> -o preview.pdf",
+      ],
+    };
+  },
+});
+
+const getCommand = leaf({
+  name: "get",
+  description: "Show one template: engine, entrypoint and files",
+  args: idArg,
+  contract: {
+    data: t.object({ template: t.ref("Template") }),
+    exitCodes: [EXIT.OK, EXIT.AUTH, EXIT.NOT_FOUND],
+    auth: "none",
+    effect: "read",
+  },
+  examples: ["latex-api templates get ieee-conference"],
+  async run({ args, app }) {
+    const { api } = await app.api();
+    const template = await api.templates.get(String(args.id));
+    return {
+      data: { template },
+      human: (d) => {
+        const tpl = d.template;
+        out(colors(rt().stdout).bold(tpl.name));
+        out(
+          renderFields([
+            ["id", tpl.id],
+            ["category", tpl.category],
+            ["engine", tpl.engine],
+            ["entrypoint", tpl.entrypoint],
+            ["tags", tpl.tags.join(", ")],
+            ["description", tpl.description],
+          ]),
+        );
+      },
+      nextSteps: [`latex-api templates init ${template.id}`],
+    };
   },
 });
 
@@ -45,57 +122,79 @@ export function stripArchivePrefix(
   id: string,
 ): Record<string, Uint8Array> {
   const prefix = `${id}/`;
-  const out: Record<string, Uint8Array> = {};
+  const result: Record<string, Uint8Array> = {};
   for (const [name, data] of Object.entries(entries)) {
     if (name.endsWith("/")) continue;
     const rel = name.startsWith(prefix) ? name.slice(prefix.length) : name;
-    if (!rel || rel.split("/").some((seg) => seg === "..")) continue;
-    out[rel] = data;
+    if (!rel || rel.split("/").some((seg) => seg === "..") || path.isAbsolute(rel)) continue;
+    result[rel] = data;
   }
-  return out;
+  return result;
 }
 
-const initCommand = defineCommand({
-  meta: { name: "init", description: "Download a template into a new directory" },
+const initCommand = leaf({
+  name: "init",
+  description: "Download a template's files into a new directory",
   args: {
     ...idArg,
     dir: { type: "positional", description: "Target directory (default: ./<id>)", required: false },
     force: { type: "boolean", description: "Write into a non-empty directory" },
   },
-  async run({ args }) {
-    const session = await createSession();
-    const target = path.resolve(args.dir ?? args.id);
+  contract: {
+    data: t.object({
+      template: t.string(),
+      dir: t.string(),
+      files: t.array(t.string()),
+      entrypoint: t.string(),
+    }),
+    exitCodes: [EXIT.OK, EXIT.USAGE, EXIT.AUTH, EXIT.NOT_FOUND],
+    auth: "none",
+    effect: "write",
+  },
+  examples: ["latex-api templates init cv-awesome my-cv"],
+  async run({ args, app }) {
+    const { api } = await app.api();
+    const id = String(args.id);
+    const target = path.resolve(args.dir ?? id);
     const existing = await fs.readdir(target).catch((error: NodeJS.ErrnoException) => {
       if (error.code === "ENOENT") return [];
       throw error;
     });
     if (existing.length > 0 && !args.force) {
-      throw new CliError(
-        `${relativeToCwd(target)} is not empty. Use --force to write into it anyway.`,
-        EXIT.USAGE,
-      );
+      throw new CliError("directory_not_empty", `${relativeToCwd(target)} is not empty`, {
+        exitCode: EXIT.USAGE,
+        hint: `Pick another directory or pass --force: latex-api templates init ${id} ${args.dir ?? id} --force`,
+      });
     }
-    const archive = await session.api.templates.archive(args.id);
-    const files = stripArchivePrefix(unzipSync(archive), args.id);
+    const archive = await api.templates.archive(id);
+    const files = stripArchivePrefix(unzipSync(archive), id);
     const names = Object.keys(files).sort();
-    if (names.length === 0) throw new CliError(`Template "${args.id}" has no files`, EXIT.NETWORK);
-    for (const name of names) {
-      await writeOutput(path.join(target, ...name.split("/")), files[name]!);
+    if (names.length === 0) {
+      throw new CliError("template_empty", `Template "${id}" has no files`, {
+        exitCode: EXIT.AUTH,
+      });
     }
-    consola.success(
-      `Created ${pc.bold(relativeToCwd(target))} with ${names.length} file${names.length === 1 ? "" : "s"}`,
-    );
-    for (const name of names) console.log(`  ${name}`);
-    const template = await session.api.templates.get(args.id).catch(() => undefined);
-    const entry = template?.entrypoint ?? "main.tex";
-    console.log(
-      pc.dim(`\nCompile it with: latex-api compile ${relativeToCwd(target)} --entrypoint ${entry}`),
-    );
+    for (const name of names) {
+      await writeOutput(path.join(target, ...name.split("/")), files[name] as Uint8Array);
+    }
+    const template = await api.templates.get(id).catch(() => undefined);
+    const entrypoint = template?.entrypoint ?? "main.tex";
+    const dir = relativeToCwd(target);
+    return {
+      data: { template: id, dir: target, files: names, entrypoint },
+      human: (d) => {
+        const c = colors(rt().stdout);
+        out(`${c.ok("✔")} Created ${c.bold(dir)} with ${plural(d.files.length, "file")}`);
+        for (const name of d.files) out(`  ${c.muted(name)}`);
+      },
+      nextSteps: [`latex-api compile ${dir} --entrypoint ${entrypoint}`],
+    };
   },
 });
 
-const previewCommand = defineCommand({
-  meta: { name: "preview", description: "Download the rendered PDF of the untouched template" },
+const previewCommand = leaf({
+  name: "preview",
+  description: "Download the rendered PDF of the untouched template",
   args: {
     ...idArg,
     output: {
@@ -104,21 +203,30 @@ const previewCommand = defineCommand({
       description: "Where to write the PDF (default: <id>.pdf)",
     },
   },
-  async run({ args }) {
-    const session = await createSession();
-    const file = args.output ?? `${args.id}.pdf`;
-    try {
-      const pdf = await session.api.templates.preview(args.id);
-      await writeOutput(file, pdf);
-      consola.success(`${pc.bold(relativeToCwd(file))} ${pc.dim(formatBytes(pdf.byteLength))}`);
-    } catch (error) {
-      reportError(error, false);
-      process.exitCode = EXIT.NETWORK;
-    }
+  contract: {
+    data: t.object({ template: t.string(), pdf: pdfShape }),
+    exitCodes: [EXIT.OK, EXIT.AUTH, EXIT.NOT_FOUND],
+    auth: "none",
+    effect: "write",
+  },
+  examples: ["latex-api templates preview cv-awesome -o cv.pdf"],
+  async run({ args, app }) {
+    const { api } = await app.api();
+    const id = String(args.id);
+    const file = args.output ?? `${id}.pdf`;
+    const pdf = await api.templates.preview(id);
+    await writeOutput(file, pdf);
+    return {
+      data: { template: id, pdf: { path: file, bytes: pdf.byteLength } },
+      human: (d) =>
+        out(
+          `${colors(rt().stdout).ok("✔")} ${relativeToCwd(d.pdf.path)}  ${formatBytes(d.pdf.bytes)}`,
+        ),
+    };
   },
 });
 
-/** Reads every file of `dir` as an override (text files as UTF-8 strings, the rest as bytes). */
+/** Reads every file of `dir` as an override. */
 export async function readOverrides(dir: string): Promise<ProjectFileInput[]> {
   const files = await listDirectoryFiles(dir);
   const overrides: ProjectFileInput[] = [];
@@ -129,11 +237,9 @@ export async function readOverrides(dir: string): Promise<ProjectFileInput[]> {
   return overrides;
 }
 
-const compileCommand = defineCommand({
-  meta: {
-    name: "compile",
-    description: "Compile a template, optionally overriding files from a directory",
-  },
+const compileCommand = leaf({
+  name: "compile",
+  description: "Compile a template, optionally layering the files of a directory on top",
   args: {
     ...idArg,
     dir: {
@@ -148,57 +254,76 @@ const compileCommand = defineCommand({
     },
     engine: { type: "enum", options: [...ENGINES], description: "Override the template engine" },
     entrypoint: { type: "string", description: "Override the template entrypoint" },
-    timeout: { type: "string", description: "Compile timeout in milliseconds" },
+    timeout: { type: "string", description: "Compile timeout in milliseconds", valueHint: "ms" },
     force: { type: "boolean", description: "Skip the server-side cache" },
-    json: { type: "boolean", description: "Print the job envelope as JSON" },
   },
-  async run({ args }) {
-    const session = await createSession({ requireKey: true });
-    const file = args.output ?? `${args.id}.pdf`;
+  contract: {
+    data: t.object({ job: t.ref("Job"), pdf: pdfShape }),
+    exitCodes: [EXIT.OK, EXIT.COMPILE_FAILED, EXIT.USAGE, EXIT.AUTH, EXIT.NOT_FOUND, EXIT.CONFLICT],
+    auth: "required",
+    effect: "write",
+    notes: "Failures carry diagnostics exactly like `compile`.",
+  },
+  examples: ["latex-api templates compile cv-awesome ./my-cv -o cv.pdf"],
+  async run({ args, app }) {
+    const { api, settings } = await app.api({ requireAuth: true });
+    const id = String(args.id);
+    const file = args.output ?? `${id}.pdf`;
     const files = args.dir ? await readOverrides(path.resolve(args.dir)) : undefined;
-    const input = {
-      files,
-      engine: parseEngine(args.engine),
-      entrypoint: args.entrypoint,
-      options: parseCompileOptions({ timeout: args.timeout, force: args.force }),
-    };
+    const status = progress(`Compiling template ${id}`);
+    let job: Job;
     try {
-      if (args.json) {
-        const { job } = await session.api.templates.compile(args.id, input, { accept: "json" });
-        printJson({ job });
-        if (job.status === "succeeded" && job.result?.pdfUrl) {
-          await writeOutput(file, await session.api.jobs.pdf(job.id));
-        }
-        process.exitCode = job.status === "succeeded" ? EXIT.OK : EXIT.COMPILE_FAILED;
-        return;
-      }
-      const result = await session.api.templates.compile(args.id, input);
-      await writeOutput(file, result.pdf);
-      const extra = [
-        result.cached ? pc.cyan("cached") : "",
-        result.warnings ? pc.yellow(`${result.warnings} warnings`) : "",
-      ]
-        .filter(Boolean)
-        .join(pc.dim("  ·  "));
-      consola.success(
-        `${pc.bold(relativeToCwd(file))} ${pc.dim(formatBytes(result.pdf.byteLength))}${extra ? `  ${extra}` : ""}`,
-      );
+      ({ job } = await api.templates.compile(
+        id,
+        {
+          files,
+          engine: parseEngine(args.engine),
+          entrypoint: args.entrypoint,
+          options: parseCompileOptions({ timeout: args.timeout, force: args.force }),
+        },
+        { accept: "json" },
+      ));
     } catch (error) {
-      reportError(error, args.json);
-      process.exitCode =
-        error instanceof Error && error.name === "CompileFailedError"
-          ? EXIT.COMPILE_FAILED
-          : EXIT.NETWORK;
+      status.fail("Compilation failed");
+      throw error;
     }
+    appendLedger(app.paths.ledger, {
+      event: "finished",
+      id: job.id,
+      mode: "sync",
+      profile: settings.profileName,
+      baseUrl: settings.baseUrl,
+      status: job.status,
+      engine: job.engine,
+      entrypoint: job.entrypoint,
+      source: args.dir ? path.resolve(args.dir) : `template:${id}`,
+      output: path.resolve(file),
+    });
+    if (job.status !== "succeeded") {
+      status.fail("Compilation failed");
+      throw jobFailure(job);
+    }
+    const pdf = await api.jobs.pdf(job.id);
+    await writeOutput(file, pdf);
+    status.stop();
+    return {
+      data: { job, pdf: { path: file, bytes: pdf.byteLength } },
+      human: (d) => {
+        const c = colors(rt().stdout);
+        const extra = [
+          d.job.result?.cached ? c.info("cached") : "",
+          d.job.result?.warnings ? c.warn(plural(d.job.result.warnings, "warning")) : "",
+        ].filter(Boolean);
+        out(
+          `${c.ok("✔")} ${c.bold(relativeToCwd(d.pdf.path))}  ${formatBytes(d.pdf.bytes)}${extra.length ? `  ${extra.join(c.muted("  ·  "))}` : ""}`,
+        );
+      },
+    };
   },
 });
 
-export const templatesCommand = defineCommand({
-  meta: { name: "templates", description: "Browse, scaffold and compile templates" },
-  subCommands: {
-    list: listCommand,
-    init: initCommand,
-    preview: previewCommand,
-    compile: compileCommand,
-  },
+export const templatesGroup = group({
+  name: "templates",
+  description: "Browse, scaffold and compile templates (papers, CVs, posters, ...)",
+  commands: [listCommand, getCommand, initCommand, previewCommand, compileCommand],
 });

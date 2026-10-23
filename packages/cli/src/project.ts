@@ -52,7 +52,10 @@ export async function resolveProject(
   const cwd = options.cwd ?? process.cwd();
   const target = path.resolve(cwd, input ?? ".");
   const stat = await fs.stat(target).catch(() => undefined);
-  if (!stat) throw new CliError(`Path not found: ${input ?? "."}`, EXIT.USAGE);
+  if (!stat)
+    throw new CliError("path_not_found", `Path not found: ${input ?? "."}`, {
+      exitCode: EXIT.USAGE,
+    });
 
   let dir: string;
   let entrypoint: string | undefined;
@@ -66,14 +69,20 @@ export async function resolveProject(
     if (entrypoint) {
       const abs = path.join(dir, entrypoint);
       if (!(await fs.stat(abs).catch(() => undefined))?.isFile()) {
-        throw new CliError(`Entrypoint not found: ${entrypoint} (in ${dir})`, EXIT.USAGE);
+        throw new CliError(
+          "entrypoint_not_found",
+          `Entrypoint not found: ${entrypoint} (in ${dir})`,
+          { exitCode: EXIT.USAGE },
+        );
       }
     } else {
       entrypoint = await guessEntrypoint(dir);
     }
   } else if (stat.isFile()) {
     if (!/\.(tex|ltx|latex)$/i.test(target)) {
-      throw new CliError(`Expected a .tex file or a directory, got: ${input}`, EXIT.USAGE);
+      throw new CliError("usage", `Expected a .tex file or a directory, got: ${input}`, {
+        exitCode: EXIT.USAGE,
+      });
     }
     dir = path.dirname(target);
     kind = "file";
@@ -83,7 +92,7 @@ export async function resolveProject(
       : path.basename(target);
     transport = options.withSiblings || options.entrypoint ? "zip" : "single";
   } else {
-    throw new CliError(`Not a file or directory: ${input}`, EXIT.USAGE);
+    throw new CliError("usage", `Not a file or directory: ${input}`, { exitCode: EXIT.USAGE });
   }
 
   const outputPath = options.output
@@ -146,7 +155,8 @@ export async function prepareProject(
 ): Promise<PreparedProject> {
   if (project.transport === "single" && project.filePath) {
     const source = await fs.readFile(project.filePath, "utf8");
-    if (!source.trim()) throw new CliError(`${project.filePath} is empty`, EXIT.USAGE);
+    if (!source.trim())
+      throw new CliError("usage", `${project.filePath} is empty`, { exitCode: EXIT.USAGE });
     const name = path.basename(project.filePath);
     const hint = referencesOtherFiles(source)
       ? `This file references other files; compile the folder instead: latex-api compile ${toPosix(path.relative(process.cwd(), project.dir) || ".")} --entrypoint ${name}`
@@ -188,7 +198,9 @@ export interface CompileFlags {
 export function parseEngine(value: string | undefined): Engine | undefined {
   if (!value) return undefined;
   if (!(ENGINES as readonly string[]).includes(value)) {
-    throw new CliError(`Unknown engine "${value}". Use one of: ${ENGINES.join(", ")}`, EXIT.USAGE);
+    throw new CliError("usage", `Unknown engine "${value}". Use one of: ${ENGINES.join(", ")}`, {
+      exitCode: EXIT.USAGE,
+    });
   }
   return value as Engine;
 }
@@ -199,8 +211,9 @@ export function parseCompileOptions(flags: CompileFlags): CompileRequestOptions 
     const ms = Number(flags.timeout);
     if (!Number.isInteger(ms) || ms <= 0) {
       throw new CliError(
+        "usage",
         `--timeout must be a positive number of milliseconds, got "${flags.timeout}"`,
-        EXIT.USAGE,
+        { exitCode: EXIT.USAGE },
       );
     }
     options.timeoutMs = ms;
@@ -208,8 +221,9 @@ export function parseCompileOptions(flags: CompileFlags): CompileRequestOptions 
   if (flags.bibliography) {
     if (!(BIBLIOGRAPHY_MODES as readonly string[]).includes(flags.bibliography)) {
       throw new CliError(
+        "usage",
         `--bibliography must be one of ${BIBLIOGRAPHY_MODES.join(", ")}, got "${flags.bibliography}"`,
-        EXIT.USAGE,
+        { exitCode: EXIT.USAGE },
       );
     }
     options.bibliography = flags.bibliography as CompileRequestOptions["bibliography"];
@@ -219,7 +233,9 @@ export function parseCompileOptions(flags: CompileFlags): CompileRequestOptions 
     try {
       new URL(flags.webhook);
     } catch {
-      throw new CliError(`--webhook must be a valid URL, got "${flags.webhook}"`, EXIT.USAGE);
+      throw new CliError("usage", `--webhook must be a valid URL, got "${flags.webhook}"`, {
+        exitCode: EXIT.USAGE,
+      });
     }
     options.webhookUrl = flags.webhook;
   }

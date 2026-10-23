@@ -8,10 +8,10 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 /**
  * Opt-in end-to-end test of the built CLI against a running server:
- *   pnpm build && LATEX_API_URL=http://localhost:3000 LATEX_API_KEY=... pnpm test
+ *   pnpm build && LATEX_API_URL=http://localhost:3000 LATEX_API_TOKEN=... pnpm test
  */
 const baseUrl = process.env.LATEX_API_URL;
-const apiKey = process.env.LATEX_API_KEY;
+const apiKey = process.env.LATEX_API_TOKEN;
 const run = promisify(execFile);
 const bin = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "dist", "cli.mjs");
 
@@ -34,7 +34,10 @@ describe.skipIf(!baseUrl || !apiKey)("integration (LATEX_API_URL)", () => {
   });
 
   const cli = (...args: string[]) =>
-    run(process.execPath, [bin, ...args], { cwd: dir, env: { ...process.env, NO_COLOR: "1" } });
+    run(process.execPath, [bin, ...args], {
+      cwd: dir,
+      env: { ...process.env, NO_COLOR: "1", LATEX_API_HOME: path.join(dir, ".home") },
+    });
 
   it("prints help and version", async () => {
     const { stdout } = await cli("--help");
@@ -48,19 +51,23 @@ describe.skipIf(!baseUrl || !apiKey)("integration (LATEX_API_URL)", () => {
     expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");
   });
 
-  it("exits with 1 and a diagnostics report on LaTeX errors", async () => {
+  it("exits with 1 and diagnostics in the error envelope on LaTeX errors", async () => {
     const result = await cli("compile", "broken.tex").then(
-      () => ({ code: 0, stderr: "" }),
-      (e: { code: number; stderr: string }) => e,
+      () => ({ code: 0, stdout: "" }),
+      (e: { code: number; stdout: string }) => e,
     );
     expect(result.code).toBe(1);
-    expect(result.stderr).toMatch(/error/);
+    const envelope = JSON.parse(result.stdout);
+    expect(envelope.error.code).toBe("compile_failed");
+    expect(envelope.error.details.diagnostics.length).toBeGreaterThan(0);
   });
 
   it("lists templates and limits", async () => {
     const { stdout } = await cli("templates", "list", "--json");
-    expect(JSON.parse(stdout)).toHaveProperty("templates");
-    const limits = JSON.parse((await cli("limits", "--json")).stdout) as { engines: string[] };
-    expect(limits.engines).toContain("pdflatex");
+    expect(JSON.parse(stdout).data).toHaveProperty("templates");
+    const limits = JSON.parse((await cli("limits", "--json")).stdout) as {
+      data: { limits: { engines: string[] } };
+    };
+    expect(limits.data.limits.engines).toContain("pdflatex");
   });
 });

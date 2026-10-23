@@ -1,4 +1,12 @@
-import { InlineJobQueue, migrate, PgBossQueue } from "@latex-api/infra";
+import type { InlineJobQueue, PgBossQueue } from "@latex-api/infra";
+import { migrate } from "@latex-api/infra";
+
+// Duck typing instead of instanceof: Next.js may load infra twice (separate bundles).
+const isPgBoss = (q: unknown): q is PgBossQueue =>
+  typeof (q as PgBossQueue).schedulePurge === "function";
+const isInline = (q: unknown): q is InlineJobQueue =>
+  typeof (q as InlineJobQueue).setHandler === "function";
+
 import { getContainer } from "./container";
 
 const BOOT_KEY = Symbol.for("latex-api.boot");
@@ -49,7 +57,7 @@ async function doBoot(): Promise<void> {
     }
   };
 
-  if (container.queue instanceof PgBossQueue) {
+  if (isPgBoss(container.queue)) {
     await container.queue.start();
     await container.queue.work(config.limits.maxConcurrentJobs, handler);
     await container.queue.schedulePurge("*/15 * * * *", async () => {
@@ -57,7 +65,7 @@ async function doBoot(): Promise<void> {
       await workspaces.sweep(6 * 3_600_000);
     });
     logger.info({ concurrency: config.limits.maxConcurrentJobs }, "pg-boss workers started");
-  } else if (container.queue instanceof InlineJobQueue) {
+  } else if (isInline(container.queue)) {
     container.queue.setHandler(handler);
     const timer = setInterval(
       () => void useCases.purgeExpired.execute().catch(() => undefined),
@@ -79,8 +87,8 @@ async function doBoot(): Promise<void> {
   const shutdown = async (signal: string) => {
     logger.info({ signal }, "shutting down");
     try {
-      if (container.queue instanceof PgBossQueue) await container.queue.stop();
-      else if (container.queue instanceof InlineJobQueue) container.queue.stop();
+      if (isPgBoss(container.queue)) await container.queue.stop();
+      else if (isInline(container.queue)) container.queue.stop();
       await container.pool?.end();
     } finally {
       process.exit(0);

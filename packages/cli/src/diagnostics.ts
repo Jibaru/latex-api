@@ -1,5 +1,8 @@
 import type { Diagnostic, Job } from "@jibaru/latex-api-sdk";
-import pc from "picocolors";
+import { createColors } from "picocolors";
+import { sanitize } from "./blocks/style";
+
+const pc = createColors(true);
 
 export interface FormatOptions {
   /** Maximum number of diagnostics to print before "+N more". Default 20. */
@@ -39,9 +42,11 @@ export function formatDiagnostic(d: Diagnostic, color = true): string {
       : d.severity === "warning"
         ? paint(color, pc.yellow, "warning")
         : paint(color, pc.blue, "info");
-  const message = d.message.replace(/\s+/g, " ").trim();
+  const message = sanitize(d.message).replace(/\s+/g, " ").trim();
   const prefix = location ? `${paint(color, pc.bold, location)}: ` : "";
-  const context = d.context?.trim() ? `\n    ${paint(color, pc.dim, d.context.trim())}` : "";
+  const context = d.context?.trim()
+    ? `\n    ${paint(color, pc.dim, sanitize(d.context).trim())}`
+    : "";
   return `${prefix}${severity}: ${message}${context}`;
 }
 
@@ -92,7 +97,7 @@ export function formatJobFailure(job: Job, color = true): string {
       ? "Compilation timed out"
       : job.status === "cancelled"
         ? "Job was cancelled"
-        : (job.error?.message ?? "Compilation failed");
+        : sanitize(job.error?.message ?? "Compilation failed");
   const body = job.result?.diagnostics?.length
     ? formatDiagnostics(job.result.diagnostics, { color, logUrl: job.result.logUrl })
     : job.result?.logUrl

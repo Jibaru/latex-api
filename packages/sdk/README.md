@@ -12,7 +12,7 @@ npm install @jibaru/latex-api-sdk
 ```ts
 import { LatexApi } from "@jibaru/latex-api-sdk";
 
-const api = new LatexApi({ apiKey: process.env.LATEX_API_KEY });
+const api = new LatexApi({ apiKey: process.env.LATEX_API_TOKEN });
 
 const { pdf, jobId, cached, warnings } = await api.compile({
   source: String.raw`\documentclass{article}\begin{document}Hello, world.\end{document}`,
@@ -20,7 +20,7 @@ const { pdf, jobId, cached, warnings } = await api.compile({
 // pdf is a Uint8Array
 ```
 
-The default base URL is the public instance `https://latex-api.crafter.run`. Point `baseUrl` at your own deployment to self-host. In Node, `LATEX_API_URL` and `LATEX_API_KEY` are read automatically when the options are omitted.
+The default base URL is the public instance `https://latex-api.crafter.run`. Point `baseUrl` at your own deployment to self-host. In Node, `LATEX_API_URL` and `LATEX_API_TOKEN` (or the deprecated `LATEX_API_KEY`) are read automatically when the options are omitted. `token` is accepted as an alias of `apiKey`.
 
 ```ts
 const api = new LatexApi({
@@ -137,6 +137,33 @@ for await (const event of api.jobs.events(job.id, { signal })) {
 }
 ```
 
+## Account, tokens and device sign-in
+
+```ts
+const { user, principal } = await api.me(); // validates the token; principal.tokenId identifies it
+
+const tokens = await api.tokens.list(); // secrets are never returned
+const { token, apiToken } = await api.tokens.create({ name: "ci", expiresInDays: 90 }); // `null` = never expires
+await api.tokens.revoke(apiToken.id);
+
+const jobs = await api.jobs.list({ limit: 20 }); // the caller's recent jobs
+```
+
+Device sign-in (what `latex-api auth login` uses). The calls send no credential:
+
+```ts
+const anon = new LatexApi({ apiKey: "" });
+const start = await anon.auth.startDevice({ clientName: "my-tool" });
+console.log(`Open ${start.verificationUriComplete} and confirm ${start.userCode}`);
+let interval = start.interval;
+for (;;) {
+  await new Promise((r) => setTimeout(r, interval * 1000));
+  const result = await anon.auth.pollDevice(start.deviceCode); // throws access_denied / expired_token
+  if (result.status === "approved") break;
+  interval = result.interval ?? (result.status === "slow_down" ? interval + 2 : interval);
+}
+```
+
 ## Templates
 
 ```ts
@@ -177,7 +204,7 @@ const url = URL.createObjectURL(new Blob([pdf], { type: "application/pdf" }));
 "use server";
 import { CompileFailedError, LatexApi } from "@jibaru/latex-api-sdk";
 
-const api = new LatexApi({ apiKey: process.env.LATEX_API_KEY });
+const api = new LatexApi({ apiKey: process.env.LATEX_API_TOKEN });
 
 export async function renderInvoice(tex: string) {
   try {

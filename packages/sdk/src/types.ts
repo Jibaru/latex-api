@@ -109,13 +109,42 @@ export interface EventsOptions {
 export interface LatexApiOptions {
   /** Defaults to `LATEX_API_URL` (Node) or `https://latex-api.crafter.run`. */
   baseUrl?: string;
-  /** Defaults to `LATEX_API_KEY` in Node. Public endpoints work without a key. */
+  /**
+   * A personal API token (`lta_...`). Defaults to `LATEX_API_TOKEN` (or the deprecated
+   * `LATEX_API_KEY`) in Node. Public endpoints work without one.
+   */
   apiKey?: string;
+  /** Alias of `apiKey`. */
+  token?: string;
   /** Custom fetch implementation (defaults to `globalThis.fetch`). */
   fetch?: typeof fetch;
   /** Sent as `User-Agent` outside browsers. */
   userAgent?: string;
 }
+
+export interface CreateTokenInput {
+  name: string;
+  /** Days until the token expires; `null` or omitted for a token that never expires. */
+  expiresInDays?: number | null;
+}
+
+export interface DeviceStartInput {
+  clientName?: string;
+  hostname?: string;
+  platform?: string;
+}
+
+/** One `POST /v1/auth/device/token` outcome; denial and expiry are thrown as errors. */
+export type DevicePollResult =
+  | { status: "pending" | "slow_down"; interval: number | undefined }
+  | {
+      status: "approved";
+      token: string;
+      tokenId: string;
+      name: string;
+      expiresAt?: string;
+      user: { id: string; email?: string } | null;
+    };
 
 export const TERMINAL_STATUSES: ReadonlySet<JobStatus> = new Set<JobStatus>([
   "succeeded",

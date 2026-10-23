@@ -93,8 +93,47 @@ export type ProjectFile = {
  */
 export type Engine = 'pdflatex' | 'xelatex' | 'lualatex';
 
-export type JobEnvelope = {
-    job: Job;
+export type Me = {
+    user: User;
+    principal: {
+        name: string;
+        kind: 'user' | 'key' | 'demo' | 'anonymous';
+        via?: 'token' | 'session' | 'env';
+        tokenId?: string;
+    };
+};
+
+export type User = {
+    id: string;
+    email?: string;
+} | null;
+
+export type ApiToken = {
+    id: string;
+    name: string;
+    prefix: string;
+    origin: 'dashboard' | 'cli' | 'api';
+    status: 'active' | 'expired' | 'revoked';
+    createdAt: string;
+    expiresAt?: string;
+    lastUsedAt?: string;
+    revokedAt?: string;
+};
+
+export type CreatedApiToken = {
+    /**
+     * The secret. Shown once; store it now.
+     */
+    token: string;
+    apiToken: ApiToken;
+};
+
+export type CreateApiTokenRequest = {
+    name: string;
+    /**
+     * Omit or null for a token that never expires.
+     */
+    expiresInDays?: number | null;
 };
 
 export type Job = {
@@ -151,6 +190,37 @@ export type Diagnostic = {
     line?: number;
     context?: string;
     source?: string;
+};
+
+export type DeviceAuthorizationStart = {
+    deviceCode: string;
+    userCode: string;
+    verificationUri: string;
+    verificationUriComplete: string;
+    expiresIn: number;
+    interval: number;
+};
+
+export type DeviceToken = {
+    token: string;
+    tokenId: string;
+    name: string;
+    expiresAt?: string;
+    user: User;
+};
+
+export type DeviceAuthorization = {
+    userCode: string;
+    status: 'pending' | 'approved' | 'denied' | 'consumed' | 'expired';
+    clientName: string;
+    hostname?: string;
+    platform?: string;
+    createdAt: string;
+    expiresAt: string;
+};
+
+export type JobEnvelope = {
+    job: Job;
 };
 
 /**
@@ -326,6 +396,331 @@ export type PostV1DemoCompileResponses = {
 
 export type PostV1DemoCompileResponse = PostV1DemoCompileResponses[keyof PostV1DemoCompileResponses];
 
+export type GetV1MeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/v1/me';
+};
+
+export type GetV1MeErrors = {
+    /**
+     * Missing or invalid credential
+     */
+    401: Problem;
+};
+
+export type GetV1MeError = GetV1MeErrors[keyof GetV1MeErrors];
+
+export type GetV1MeResponses = {
+    /**
+     * Identity
+     */
+    200: Me;
+};
+
+export type GetV1MeResponse = GetV1MeResponses[keyof GetV1MeResponses];
+
+export type GetV1TokensData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/v1/tokens';
+};
+
+export type GetV1TokensErrors = {
+    /**
+     * Operator keys have no personal tokens
+     */
+    403: Problem;
+};
+
+export type GetV1TokensError = GetV1TokensErrors[keyof GetV1TokensErrors];
+
+export type GetV1TokensResponses = {
+    /**
+     * Tokens, newest first. Secrets are never returned.
+     */
+    200: {
+        tokens: Array<ApiToken>;
+    };
+};
+
+export type GetV1TokensResponse = GetV1TokensResponses[keyof GetV1TokensResponses];
+
+export type PostV1TokensData = {
+    body: CreateApiTokenRequest;
+    path?: never;
+    query?: never;
+    url: '/v1/tokens';
+};
+
+export type PostV1TokensErrors = {
+    /**
+     * Operator keys cannot create personal tokens
+     */
+    403: Problem;
+    /**
+     * Too many active tokens
+     */
+    409: Problem;
+};
+
+export type PostV1TokensError = PostV1TokensErrors[keyof PostV1TokensErrors];
+
+export type PostV1TokensResponses = {
+    /**
+     * Created
+     */
+    201: CreatedApiToken;
+};
+
+export type PostV1TokensResponse = PostV1TokensResponses[keyof PostV1TokensResponses];
+
+export type DeleteV1TokensByIdData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/v1/tokens/{id}';
+};
+
+export type DeleteV1TokensByIdErrors = {
+    /**
+     * Unknown token
+     */
+    404: Problem;
+};
+
+export type DeleteV1TokensByIdError = DeleteV1TokensByIdErrors[keyof DeleteV1TokensByIdErrors];
+
+export type DeleteV1TokensByIdResponses = {
+    /**
+     * Revoked
+     */
+    200: {
+        apiToken: ApiToken;
+    };
+};
+
+export type DeleteV1TokensByIdResponse = DeleteV1TokensByIdResponses[keyof DeleteV1TokensByIdResponses];
+
+export type GetV1JobsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+    };
+    url: '/v1/jobs';
+};
+
+export type GetV1JobsResponses = {
+    /**
+     * Jobs, newest first
+     */
+    200: {
+        jobs: Array<Job>;
+    };
+};
+
+export type GetV1JobsResponse = GetV1JobsResponses[keyof GetV1JobsResponses];
+
+export type PostV1JobsData = {
+    body?: CompileRequest;
+    path?: never;
+    query?: {
+        engine?: string;
+        entrypoint?: string;
+        timeoutMs?: string;
+        bibliography?: string;
+        force?: string;
+    };
+    url: '/v1/jobs';
+};
+
+export type PostV1JobsErrors = {
+    /**
+     * Invalid project or request
+     */
+    400: Problem;
+    /**
+     * Missing or invalid API key
+     */
+    401: Problem;
+    /**
+     * Payload too large
+     */
+    413: Problem;
+    /**
+     * Rate limited
+     */
+    429: Problem;
+};
+
+export type PostV1JobsError = PostV1JobsErrors[keyof PostV1JobsErrors];
+
+export type PostV1JobsResponses = {
+    /**
+     * Job accepted (or served from cache, in which case it is already finished).
+     */
+    202: JobEnvelope;
+};
+
+export type PostV1JobsResponse = PostV1JobsResponses[keyof PostV1JobsResponses];
+
+export type PostV1AuthDeviceData = {
+    body?: {
+        clientName?: string;
+        hostname?: string;
+        platform?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/auth/device';
+};
+
+export type PostV1AuthDeviceErrors = {
+    /**
+     * Too many sign-in attempts from this IP
+     */
+    429: Problem;
+};
+
+export type PostV1AuthDeviceError = PostV1AuthDeviceErrors[keyof PostV1AuthDeviceErrors];
+
+export type PostV1AuthDeviceResponses = {
+    /**
+     * Started
+     */
+    200: DeviceAuthorizationStart;
+};
+
+export type PostV1AuthDeviceResponse = PostV1AuthDeviceResponses[keyof PostV1AuthDeviceResponses];
+
+export type PostV1AuthDeviceTokenData = {
+    body: {
+        deviceCode: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/auth/device/token';
+};
+
+export type PostV1AuthDeviceTokenErrors = {
+    /**
+     * access_denied or expired_token
+     */
+    400: Problem;
+    /**
+     * authorization_pending or slow_down
+     */
+    428: Problem;
+};
+
+export type PostV1AuthDeviceTokenError = PostV1AuthDeviceTokenErrors[keyof PostV1AuthDeviceTokenErrors];
+
+export type PostV1AuthDeviceTokenResponses = {
+    /**
+     * Approved
+     */
+    200: DeviceToken;
+};
+
+export type PostV1AuthDeviceTokenResponse = PostV1AuthDeviceTokenResponses[keyof PostV1AuthDeviceTokenResponses];
+
+export type GetV1AuthDeviceByCodeData = {
+    body?: never;
+    path: {
+        code: string;
+    };
+    query?: never;
+    url: '/v1/auth/device/{code}';
+};
+
+export type GetV1AuthDeviceByCodeErrors = {
+    /**
+     * Requires a browser session
+     */
+    403: Problem;
+    /**
+     * Unknown code
+     */
+    404: Problem;
+};
+
+export type GetV1AuthDeviceByCodeError = GetV1AuthDeviceByCodeErrors[keyof GetV1AuthDeviceByCodeErrors];
+
+export type GetV1AuthDeviceByCodeResponses = {
+    /**
+     * Device request
+     */
+    200: DeviceAuthorization;
+};
+
+export type GetV1AuthDeviceByCodeResponse = GetV1AuthDeviceByCodeResponses[keyof GetV1AuthDeviceByCodeResponses];
+
+export type PostV1AuthDeviceByCodeApproveData = {
+    body?: {
+        tokenName?: string;
+        expiresInDays?: number | null;
+    };
+    path: {
+        code: string;
+    };
+    query?: never;
+    url: '/v1/auth/device/{code}/approve';
+};
+
+export type PostV1AuthDeviceByCodeApproveErrors = {
+    /**
+     * Requires a browser session
+     */
+    403: Problem;
+    /**
+     * Already handled
+     */
+    409: Problem;
+};
+
+export type PostV1AuthDeviceByCodeApproveError = PostV1AuthDeviceByCodeApproveErrors[keyof PostV1AuthDeviceByCodeApproveErrors];
+
+export type PostV1AuthDeviceByCodeApproveResponses = {
+    /**
+     * Approved
+     */
+    200: DeviceAuthorization;
+};
+
+export type PostV1AuthDeviceByCodeApproveResponse = PostV1AuthDeviceByCodeApproveResponses[keyof PostV1AuthDeviceByCodeApproveResponses];
+
+export type PostV1AuthDeviceByCodeDenyData = {
+    body?: never;
+    path: {
+        code: string;
+    };
+    query?: never;
+    url: '/v1/auth/device/{code}/deny';
+};
+
+export type PostV1AuthDeviceByCodeDenyErrors = {
+    /**
+     * Requires a browser session
+     */
+    403: Problem;
+};
+
+export type PostV1AuthDeviceByCodeDenyError = PostV1AuthDeviceByCodeDenyErrors[keyof PostV1AuthDeviceByCodeDenyErrors];
+
+export type PostV1AuthDeviceByCodeDenyResponses = {
+    /**
+     * Denied
+     */
+    200: DeviceAuthorization;
+};
+
+export type PostV1AuthDeviceByCodeDenyResponse = PostV1AuthDeviceByCodeDenyResponses[keyof PostV1AuthDeviceByCodeDenyResponses];
+
 export type PostV1CompileData = {
     body?: CompileRequest;
     path?: never;
@@ -376,49 +771,6 @@ export type PostV1CompileResponses = {
 };
 
 export type PostV1CompileResponse = PostV1CompileResponses[keyof PostV1CompileResponses];
-
-export type PostV1JobsData = {
-    body?: CompileRequest;
-    path?: never;
-    query?: {
-        engine?: string;
-        entrypoint?: string;
-        timeoutMs?: string;
-        bibliography?: string;
-        force?: string;
-    };
-    url: '/v1/jobs';
-};
-
-export type PostV1JobsErrors = {
-    /**
-     * Invalid project or request
-     */
-    400: Problem;
-    /**
-     * Missing or invalid API key
-     */
-    401: Problem;
-    /**
-     * Payload too large
-     */
-    413: Problem;
-    /**
-     * Rate limited
-     */
-    429: Problem;
-};
-
-export type PostV1JobsError = PostV1JobsErrors[keyof PostV1JobsErrors];
-
-export type PostV1JobsResponses = {
-    /**
-     * Job accepted (or served from cache, in which case it is already finished).
-     */
-    202: JobEnvelope;
-};
-
-export type PostV1JobsResponse = PostV1JobsResponses[keyof PostV1JobsResponses];
 
 export type DeleteV1JobsByIdData = {
     body?: never;
