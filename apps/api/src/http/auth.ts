@@ -15,6 +15,8 @@ export type Env = {
 export function isPublicPath(method: string, path: string): boolean {
   if (method === "OPTIONS") return true;
   if (path === "/v1/limits" || path === "/v1/demo/compile") return true;
+  if (method === "POST" && (path === "/v1/auth/device" || path === "/v1/auth/device/token"))
+    return true;
   if (method === "GET" && path.startsWith("/v1/templates")) return true;
   return false;
 }
@@ -37,7 +39,7 @@ export async function resolvePrincipal(c: Context<Env>): Promise<Principal | nul
   const match = /^Bearer\s+(.+)$/i.exec(header.trim());
   const token = match?.[1]?.trim() || c.req.header("x-api-key")?.trim();
   if (!token) return null;
-  return c.get("container").apiKeys.resolve(token);
+  return c.get("container").useCases.resolveCredential.execute(token);
 }
 
 /** Best-effort client IP behind Traefik/Nginx. */

@@ -29,6 +29,11 @@ const TITLES: Record<string, string> = {
   unsupported_media_type: "Unsupported media type",
   not_found: "Not found",
   internal: "Internal error",
+  conflict: "Conflict",
+  authorization_pending: "Authorization pending",
+  slow_down: "Slow down",
+  access_denied: "Access denied",
+  expired_token: "Expired token",
 };
 
 export function problem(

@@ -10,6 +10,12 @@ export type ErrorCode =
   | "job_not_found"
   | "job_not_cancellable"
   | "compiler_unavailable"
+  | "not_found"
+  | "conflict"
+  | "authorization_pending"
+  | "slow_down"
+  | "access_denied"
+  | "expired_token"
   | "internal";
 
 export class DomainError extends Error {
@@ -89,4 +95,42 @@ export class CompilerUnavailableError extends DomainError {
 
 export function isDomainError(error: unknown): error is DomainError {
   return error instanceof DomainError;
+}
+
+export class ForbiddenError extends DomainError {
+  constructor(message = "This credential cannot perform this action") {
+    super("forbidden", 403, message);
+    this.name = "ForbiddenError";
+  }
+}
+
+export class NotFoundError extends DomainError {
+  constructor(message: string, details?: Record<string, unknown>) {
+    super("not_found", 404, message, details);
+    this.name = "NotFoundError";
+  }
+}
+
+export class ConflictError extends DomainError {
+  constructor(message: string, details?: Record<string, unknown>) {
+    super("conflict", 409, message, details);
+    this.name = "ConflictError";
+  }
+}
+
+/** Device flow outcomes, mirroring RFC 8628 error codes. */
+export class DeviceFlowError extends DomainError {
+  constructor(
+    code: "authorization_pending" | "slow_down" | "access_denied" | "expired_token",
+    message: string,
+    details?: Record<string, unknown>,
+  ) {
+    super(
+      code,
+      code === "authorization_pending" || code === "slow_down" ? 428 : 400,
+      message,
+      details,
+    );
+    this.name = "DeviceFlowError";
+  }
 }

@@ -37,6 +37,45 @@ const MIGRATIONS: Array<{ id: string; sql: string }> = [
       CREATE INDEX IF NOT EXISTS jobs_created_at_idx ON jobs (created_at DESC);
     `,
   },
+  {
+    id: "0002_auth",
+    sql: `
+      CREATE TABLE IF NOT EXISTS api_tokens (
+        id           TEXT PRIMARY KEY,
+        user_id      TEXT NOT NULL,
+        user_email   TEXT,
+        name         TEXT NOT NULL,
+        prefix       TEXT NOT NULL,
+        hash         TEXT NOT NULL UNIQUE,
+        origin       TEXT NOT NULL,
+        created_at   TIMESTAMPTZ NOT NULL,
+        expires_at   TIMESTAMPTZ,
+        last_used_at TIMESTAMPTZ,
+        revoked_at   TIMESTAMPTZ
+      );
+      CREATE INDEX IF NOT EXISTS api_tokens_user_idx ON api_tokens (user_id, created_at DESC);
+
+      CREATE TABLE IF NOT EXISTS device_authorizations (
+        id               TEXT PRIMARY KEY,
+        device_code_hash TEXT NOT NULL UNIQUE,
+        user_code        TEXT NOT NULL,
+        status           TEXT NOT NULL,
+        client_name      TEXT NOT NULL,
+        hostname         TEXT,
+        platform         TEXT,
+        created_at       TIMESTAMPTZ NOT NULL,
+        expires_at       TIMESTAMPTZ NOT NULL,
+        last_polled_at   TIMESTAMPTZ,
+        user_id          TEXT,
+        user_email       TEXT,
+        token_id         TEXT,
+        grant_info       JSONB
+      );
+      CREATE INDEX IF NOT EXISTS device_auth_user_code_idx ON device_authorizations (user_code);
+
+      CREATE INDEX IF NOT EXISTS jobs_owner_idx ON jobs (principal_name, created_at DESC);
+    `,
+  },
 ];
 
 /** Tiny forward-only migrator; keeps the API free of a migration toolchain at runtime. */

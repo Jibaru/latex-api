@@ -141,6 +141,14 @@ export class PgJobRepository implements JobRepository {
     return Number(rows[0]?.n ?? 0);
   }
 
+  async listByOwner(owner: string, limit: number): Promise<CompileJob[]> {
+    const { rows } = await this.pool.query<Row>(
+      `SELECT ${COLUMNS} FROM jobs WHERE principal_name=$1 ORDER BY created_at DESC LIMIT $2`,
+      [owner, limit],
+    );
+    return rows.map(toJob);
+  }
+
   async listStale(startedBefore: Date): Promise<CompileJob[]> {
     const { rows } = await this.pool.query<Row>(
       `SELECT ${COLUMNS} FROM jobs WHERE status='running' AND started_at < $1`,

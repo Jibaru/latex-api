@@ -158,3 +158,11 @@ export function webhookPayload(job: CompileJob) {
     },
   };
 }
+
+export class ListJobs {
+  constructor(private readonly deps: CoreDeps) {}
+  async execute(principal: { name: string; kind: string }, limit = 20): Promise<CompileJob[]> {
+    if (principal.kind === "anonymous" || principal.kind === "demo") return [];
+    return this.deps.jobs.listByOwner(principal.name, Math.min(Math.max(1, limit), 100));
+  }
+}

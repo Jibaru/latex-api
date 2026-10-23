@@ -72,6 +72,12 @@ export async function testContainer(env: Record<string, string> = {}): Promise<{
   const container = build(config);
   const compiler = new FakeCompiler();
   container.deps.compiler = compiler;
+  // Browser sessions: "session.jwt.ada" is Ada, anything else is rejected.
+  container.deps.sessions = {
+    enabled: true,
+    verify: async (token: string) =>
+      token === "session.jwt.ada" ? { id: "user_ada", email: "ada@example.com" } : null,
+  };
   const { InlineJobQueue } = await import("@latex-api/infra");
   if (container.queue instanceof InlineJobQueue) {
     container.queue.setHandler((jobId, signal) =>
@@ -91,3 +97,5 @@ export async function testContainer(env: Record<string, string> = {}): Promise<{
 
 export const auth = { authorization: "Bearer secret" };
 export const TEX = "\\documentclass{article}\\begin{document}Hello\\end{document}";
+
+export const session = { authorization: "Bearer session.jwt.ada" };

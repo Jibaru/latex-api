@@ -1,11 +1,15 @@
 import type {
   ApiKeyResolver,
+  ApiToken,
+  ApiTokenRepository,
   ArtifactStore,
   Clock,
   CompileJob,
   CompileRequest,
   Compiler,
   CoreDeps,
+  DeviceAuthorization,
+  DeviceAuthRepository,
   IdGenerator,
   JobEvent,
   JobEvents,
@@ -17,6 +21,7 @@ import type {
   Project,
   RateLimiter,
   RawCompileOutput,
+  SessionVerifier,
   StoredArtifact,
   Template,
   TemplateRepository,
@@ -136,6 +141,12 @@ export class MemoryJobs implements JobRepository {
       durationMs: { p50: 0, p95: 0 },
     };
   }
+  async listByOwner(owner: string, limit: number) {
+    return Array.from(this.rows.values())
+      .filter((j) => j.principal.name === owner)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, limit);
+  }
   async listStale(before: Date) {
     return Array.from(this.rows.values()).filter(
       (j) => j.status === "running" && j.startedAt !== undefined && j.startedAt < before,
@@ -231,6 +242,63 @@ export class MemoryTemplates implements TemplateRepository {
   }
 }
 
+export class MemoryTokens implements ApiTokenRepository {
+  rows = new Map<string, ApiToken>();
+  async insert(t: ApiToken) {
+    this.rows.set(t.id, { ...t });
+  }
+  async findByHash(hash: string) {
+    return Array.from(this.rows.values()).find((t) => t.hash === hash) ?? null;
+  }
+  async get(id: string) {
+    return this.rows.get(id) ?? null;
+  }
+  async listByUser(userId: string) {
+    return Array.from(this.rows.values()).filter((t) => t.userId === userId);
+  }
+  async countActive(userId: string, now: Date) {
+    return (await this.listByUser(userId)).filter(
+      (t) => !t.revokedAt && (!t.expiresAt || t.expiresAt > now),
+    ).length;
+  }
+  async revoke(id: string, at: Date) {
+    const t = this.rows.get(id);
+    if (t) t.revokedAt = at;
+  }
+  async touch(id: string, at: Date) {
+    const t = this.rows.get(id);
+    if (t) t.lastUsedAt = at;
+  }
+}
+
+export class MemoryDevices implements DeviceAuthRepository {
+  rows = new Map<string, DeviceAuthorization>();
+  async insert(r: DeviceAuthorization) {
+    this.rows.set(r.id, structuredClone(r));
+  }
+  async update(r: DeviceAuthorization) {
+    this.rows.set(r.id, structuredClone(r));
+  }
+  async findByDeviceCodeHash(hash: string) {
+    const r = Array.from(this.rows.values()).find((x) => x.deviceCodeHash === hash);
+    return r ? structuredClone(r) : null;
+  }
+  async findByUserCode(code: string) {
+    const r = Array.from(this.rows.values()).find((x) => x.userCode === code);
+    return r ? structuredClone(r) : null;
+  }
+  async deleteExpired() {
+    return 0;
+  }
+}
+
+export class FakeSessions implements SessionVerifier {
+  enabled = true;
+  async verify(token: string) {
+    return token === "aaa.bbb.ccc" ? { id: "user_1", email: "ada@example.com" } : null;
+  }
+}
+
 export const silentLogger: Logger = {
   debug() {},
   info() {},
@@ -249,6 +317,8 @@ export function makeDeps(overrides: Partial<CoreDeps> = {}): CoreDeps & {
   queue: MemoryQueue;
   workspaces: MemoryWorkspaces;
   rateLimiter: MemoryRateLimiter;
+  tokens: MemoryTokens;
+  devices: MemoryDevices;
 } {
   let counter = 0;
   let t = 1_700_000_000_000;
@@ -273,6 +343,9 @@ export function makeDeps(overrides: Partial<CoreDeps> = {}): CoreDeps & {
     ids,
     logger: silentLogger,
     webhooks,
+    tokens: new MemoryTokens(),
+    devices: new MemoryDevices(),
+    sessions: new FakeSessions(),
   };
   return { ...base, ...overrides } as never;
 }

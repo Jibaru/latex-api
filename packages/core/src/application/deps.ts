@@ -1,15 +1,18 @@
 import type { Limits } from "../domain/limits";
 import type {
   ApiKeyResolver,
+  ApiTokenRepository,
   ArtifactStore,
   Clock,
   Compiler,
+  DeviceAuthRepository,
   IdGenerator,
   JobEvents,
   JobQueue,
   JobRepository,
   Logger,
   RateLimiter,
+  SessionVerifier,
   TemplateRepository,
   WebhookNotifier,
   Workspaces,
@@ -30,6 +33,9 @@ export interface CoreDeps {
   ids: IdGenerator;
   logger: Logger;
   webhooks: WebhookNotifier;
+  tokens: ApiTokenRepository;
+  devices: DeviceAuthRepository;
+  sessions: SessionVerifier;
 }
 
 export const artifactKeys = {

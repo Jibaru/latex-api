@@ -23,6 +23,10 @@ export interface InfraConfig {
   demoApiKey: string | undefined;
   publicUrl: string;
   logLevel: string;
+  clerkSecretKey: string | undefined;
+  clerkJwtKey: string | undefined;
+  /** Origins allowed to present Clerk session tokens (azp claim). */
+  clerkAuthorizedParties: string[];
 }
 
 function int(env: EnvSource, key: string, fallback: number): number {
@@ -98,5 +102,11 @@ export function loadConfig(env: EnvSource = process.env): InfraConfig {
     demoApiKey: env.DEMO_API_KEY || undefined,
     publicUrl: (env.PUBLIC_URL ?? "http://localhost:3000").replace(/\/$/, ""),
     logLevel: env.LOG_LEVEL ?? "info",
+    clerkSecretKey: env.CLERK_SECRET_KEY || undefined,
+    clerkJwtKey: env.CLERK_JWT_KEY || undefined,
+    clerkAuthorizedParties: (env.CLERK_AUTHORIZED_PARTIES ?? env.PUBLIC_URL ?? "")
+      .split(",")
+      .map((s) => s.trim().replace(/\/$/, ""))
+      .filter(Boolean),
   };
 }

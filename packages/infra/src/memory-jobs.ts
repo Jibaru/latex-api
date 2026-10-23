@@ -50,6 +50,13 @@ export class MemoryJobRepository implements JobRepository {
     for (const j of this.rows.values()) if (j.projectHash === projectHash) n++;
     return n;
   }
+  async listByOwner(owner: string, limit: number): Promise<CompileJob[]> {
+    return Array.from(this.rows.values())
+      .filter((j) => j.principal.name === owner)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, limit)
+      .map((j) => structuredClone(j));
+  }
   async listStale(startedBefore: Date): Promise<CompileJob[]> {
     return Array.from(this.rows.values()).filter(
       (j) => j.status === "running" && j.startedAt !== undefined && j.startedAt < startedBefore,

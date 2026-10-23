@@ -6,6 +6,7 @@ import { HTTPException } from "hono/http-exception";
 import { getContainer } from "../container";
 import { bearerAuth, type Env } from "./auth";
 import { onError, problem } from "./errors";
+import { registerAccountRoutes } from "./routes/account";
 import { registerCompileRoutes } from "./routes/compile";
 import { registerJobRoutes } from "./routes/jobs";
 import { API_VERSION, registerMetaRoutes } from "./routes/meta";
@@ -73,7 +74,7 @@ export function createHttpApp(
     "*",
     cors({
       origin: "*",
-      allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
+      allowMethods: ["GET", "POST", "DELETE", "PATCH", "OPTIONS"],
       allowHeaders: ["Authorization", "Content-Type", "Accept", "X-API-Key", "X-Request-Id"],
       exposeHeaders: [
         "X-Job-Id",
@@ -100,6 +101,7 @@ export function createHttpApp(
   hono.use("/v1/*", bearerAuth());
 
   registerMetaRoutes(hono);
+  registerAccountRoutes(hono);
   registerCompileRoutes(hono);
   registerJobRoutes(hono);
   registerTemplateRoutes(hono);
@@ -107,7 +109,8 @@ export function createHttpApp(
   hono.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", {
     type: "http",
     scheme: "bearer",
-    description: "API key issued by the operator. Also accepted in the `X-API-Key` header.",
+    description:
+      "A personal API token (`lta_...`) from the dashboard or `latex-api auth login`. Also accepted in the `X-API-Key` header.",
   });
 
   hono.doc31("/openapi.json", (c) => ({
@@ -126,6 +129,7 @@ export function createHttpApp(
       { name: "Compile", description: "Synchronous compilation" },
       { name: "Jobs", description: "Asynchronous jobs, artifacts and live events" },
       { name: "Templates", description: "Ready-to-use starter projects" },
+      { name: "Account", description: "Identity, personal API tokens and CLI sign-in" },
       { name: "Meta", description: "Limits, health and statistics" },
     ],
   }));

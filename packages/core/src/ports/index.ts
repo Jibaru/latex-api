@@ -84,6 +84,8 @@ export interface JobRepository {
   delete(ids: string[]): Promise<void>;
   countByHash(projectHash: string): Promise<number>;
   stats(now: Date): Promise<JobStats>;
+  /** Most recent jobs created by a principal, newest first. */
+  listByOwner(owner: string, limit: number): Promise<CompileJob[]>;
   /** Jobs still marked running but started before the given instant (crash recovery). */
   listStale(startedBefore: Date): Promise<CompileJob[]>;
 }
@@ -163,4 +165,32 @@ export interface Logger {
 
 export interface WebhookNotifier {
   notify(url: string, payload: unknown): Promise<void>;
+}
+
+// ---------------------------------------------------------------------------
+// Identity and personal tokens
+// ---------------------------------------------------------------------------
+
+export interface ApiTokenRepository {
+  insert(token: import("../domain/auth").ApiToken): Promise<void>;
+  findByHash(hash: string): Promise<import("../domain/auth").ApiToken | null>;
+  get(id: string): Promise<import("../domain/auth").ApiToken | null>;
+  listByUser(userId: string): Promise<import("../domain/auth").ApiToken[]>;
+  countActive(userId: string, now: Date): Promise<number>;
+  revoke(id: string, at: Date): Promise<void>;
+  touch(id: string, at: Date): Promise<void>;
+}
+
+export interface DeviceAuthRepository {
+  insert(record: import("../domain/auth").DeviceAuthorization): Promise<void>;
+  update(record: import("../domain/auth").DeviceAuthorization): Promise<void>;
+  findByDeviceCodeHash(hash: string): Promise<import("../domain/auth").DeviceAuthorization | null>;
+  findByUserCode(userCode: string): Promise<import("../domain/auth").DeviceAuthorization | null>;
+  deleteExpired(before: Date): Promise<number>;
+}
+
+/** Verifies a browser session token issued by the identity provider (Clerk). */
+export interface SessionVerifier {
+  readonly enabled: boolean;
+  verify(token: string): Promise<import("../domain/auth").UserIdentity | null>;
 }

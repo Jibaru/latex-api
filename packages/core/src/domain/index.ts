@@ -1,3 +1,4 @@
+export * from "./auth";
 export * from "./diagnostic";
 export * from "./engine";
 export * from "./errors";

@@ -22,9 +22,17 @@ export interface CompileOptions {
 }
 
 export interface Principal {
-  /** Key name or `demo`. Never the secret. */
+  /**
+   * Stable owner id used for job ownership and rate limits: a user id (`user_...`) for
+   * signed-in users, the operator key name for env keys, `demo` or `anonymous`. Never a secret.
+   */
   name: string;
-  kind: "key" | "demo" | "anonymous";
+  kind: "user" | "key" | "demo" | "anonymous";
+  /** How the caller authenticated. */
+  via?: "token" | "session" | "env";
+  /** Personal API token used, when `via` is `token`. */
+  tokenId?: string;
+  email?: string;
 }
 
 export type FailureReason = "compile_failed" | "timeout" | "cancelled" | "internal";
