@@ -66,8 +66,13 @@ async function doBoot(): Promise<void> {
     timer.unref();
   }
 
-  void compiler
-    .version()
+  // Registry images (e.g. ghcr.io/...:latest) are refreshed on every start so a redeploy
+  // picks up a new compiler; local tags like latex-compiler:dev are left alone.
+  const refresh = config.compilerImage.includes("/")
+    ? compiler.pull().catch((error) => logger.warn({ err: error }, "compiler image pull failed"))
+    : Promise.resolve();
+  void refresh
+    .then(() => compiler.version())
     .then((v) => logger.info({ compiler: v }, "compiler image ready"))
     .catch((error) => logger.error({ err: error }, "compiler image unavailable"));
 
