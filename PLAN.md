@@ -1,6 +1,6 @@
 # LaTeX API — Plan de implementación
 
-Fecha: 2026-10-22. Estado: pendiente de confirmación final.
+Fecha: 2026-10-22. Estado: v1 desplegada en https://latex-api.crafter.run (2026-10-23).
 
 ## 1. Decisiones cerradas
 
@@ -155,3 +155,13 @@ Imagen `latex-compiler`: scheme-small + `collection-pictures collection-latexext
 ## 10. Limitaciones que documentaremos
 
 Sin `-shell-escape` (minted, TikZ externalize, gnuplot); sin red durante la compilación; clases fuera de TeX Live deben subirse (las de las plantillas ya vienen); fuentes personalizadas se suben y se referencian por archivo; biber/biblatex fijados a TeX Live 2026; timeouts y memoria por job; artefactos expiran a las 24 h.
+
+## 11. Estado al 2026-10-23
+
+Hecho y verificado en producción: API (sync, async + SSE, plantillas, demo, límites, health, stats), compilador TeX Live 2026 con sandbox y seccomp, Postgres + pg-boss, 7 plantillas, landing + docs (Fumadocs + referencia OpenAPI), Scalar en /reference, SDK y CLI probados contra producción, CI (lint, typecheck, tests, integración con la imagen real) e imágenes en GHCR.
+
+Pendiente, requiere acción del dueño:
+- Secretos de GitHub para el redeploy automático: `DOKPLOY_URL`, `DOKPLOY_API_KEY`, `DOKPLOY_COMPOSE_ID` (rH81cBq9FER04TrCBT_sg). Hasta entonces: `vps compose redeploy rH81cBq9FER04TrCBT_sg --profile crafter`.
+- `NPM_TOKEN` para publicar `@jibaru/latex-api-sdk` y `@jibaru/latex-api-cli` (la release los salta mientras falte).
+- Binarios de la CLI con Bun (`packages/cli/scripts/build-binaries.sh`) y release en GitHub.
+- Concurrencia: `MAX_CONCURRENT_JOBS=2` hasta conocer CPU/RAM del VPS.
