@@ -154,7 +154,7 @@ export type Job = {
     };
     result?: JobResult;
     error?: {
-        reason: 'compile_failed' | 'timeout' | 'cancelled' | 'internal';
+        reason: 'compile_failed' | 'timeout' | 'cancelled' | 'compiler_unavailable' | 'internal';
         message: string;
     };
     links: {

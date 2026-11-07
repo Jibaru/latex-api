@@ -241,6 +241,9 @@ export async function respondSync(c: Context<Env>, job: CompileJob): Promise<Res
   if (job.status === "cancelled") {
     return problem(c, 499, "cancelled", "Compilation was cancelled", { jobId: job.id }, headers);
   }
+  if (job.error?.reason === "compiler_unavailable") {
+    return problem(c, 503, "compiler_unavailable", job.error.message, { jobId: job.id }, headers);
+  }
   if (job.error?.reason === "internal") {
     return problem(c, 500, "internal", job.error.message, { jobId: job.id }, headers);
   }

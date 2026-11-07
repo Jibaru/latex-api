@@ -550,6 +550,7 @@
                   "compile_failed",
                   "timeout",
                   "cancelled",
+                  "compiler_unavailable",
                   "internal"
                 ]
               },

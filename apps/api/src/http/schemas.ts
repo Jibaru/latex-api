@@ -136,7 +136,13 @@ export const JobSchema = z
     result: JobResultSchema.optional(),
     error: z
       .object({
-        reason: z.enum(["compile_failed", "timeout", "cancelled", "internal"]),
+        reason: z.enum([
+          "compile_failed",
+          "timeout",
+          "cancelled",
+          "compiler_unavailable",
+          "internal",
+        ]),
         message: z.string(),
       })
       .optional(),

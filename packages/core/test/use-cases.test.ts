@@ -3,6 +3,7 @@ import {
   BuildTemplateProject,
   CancelJob,
   CompileProject,
+  CompilerUnavailableError,
   createProject,
   DEFAULT_LIMITS,
   EnqueueCompileJob,
@@ -107,6 +108,22 @@ describe("CompileProject (sync)", () => {
     const job = await new CompileProject(deps).execute({ project: project(), principal });
     expect(job.status).toBe("timed_out");
     await new CompileProject(deps).execute({ project: project(), principal });
+    expect(deps.compiler.calls).toHaveLength(2);
+  });
+
+  it("reports a missing compiler as compiler_unavailable, not cached", async () => {
+    const deps = makeDeps();
+    deps.compiler.behaviour = () => {
+      throw new CompilerUnavailableError("Compiler image x is not available: No such image");
+    };
+    const job = await new CompileProject(deps).execute({ project: project(), principal });
+    expect(job.status).toBe("failed");
+    expect(job.error?.reason).toBe("compiler_unavailable");
+    deps.compiler.behaviour = () => {
+      throw new Error("boom");
+    };
+    const again = await new CompileProject(deps).execute({ project: project(), principal });
+    expect(again.error?.reason).toBe("internal");
     expect(deps.compiler.calls).toHaveLength(2);
   });
 

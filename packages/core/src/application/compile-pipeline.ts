@@ -1,3 +1,4 @@
+import { isDomainError } from "../domain/errors";
 import type { CompileJob, JobResult } from "../domain/job";
 import { parseLatexLog, summarizeDiagnostics } from "../domain/log-parser";
 import type { Project } from "../domain/project";
@@ -104,11 +105,12 @@ export async function runCompile(
       job.error = { reason: "cancelled", message: "Cancelled by client" };
     } else {
       job.status = "failed";
+      const infra = isDomainError(error) && error.code === "compiler_unavailable";
       job.error = {
-        reason: "internal",
+        reason: infra ? "compiler_unavailable" : "internal",
         message: error instanceof Error ? error.message : "Unknown compiler error",
       };
-      log.error({ err: error }, "compile pipeline crashed");
+      log.error({ err: error }, infra ? "compiler unavailable" : "compile pipeline crashed");
     }
     if (!job.result) {
       job.result = {

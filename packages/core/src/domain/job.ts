@@ -35,7 +35,12 @@ export interface Principal {
   email?: string;
 }
 
-export type FailureReason = "compile_failed" | "timeout" | "cancelled" | "internal";
+export type FailureReason =
+  | "compile_failed"
+  | "timeout"
+  | "cancelled"
+  | "compiler_unavailable"
+  | "internal";
 
 export interface JobResult {
   /** Artifact key of the PDF when one was produced (also present on failed compiles sometimes). */

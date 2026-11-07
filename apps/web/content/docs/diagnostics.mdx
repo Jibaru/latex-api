@@ -44,7 +44,7 @@ Anything the parser does not understand stays in the raw log, which you can alwa
 | LaTeX errors (exit code not 0 or errors parsed) | `422 compile_failed` with `diagnostics`, `logUrl`, maybe `pdfUrl` | `status: "failed"`, `error.reason: "compile_failed"` |
 | Killed at the timeout                      | `408 timeout` with partial `diagnostics`   | `status: "timed_out"`, `error.reason: "timeout"` |
 | Cancelled                                  | n/a                                        | `status: "cancelled"`                          |
-| Container could not start                  | `503 compiler_unavailable`                 | `status: "failed"`, `error.reason: "internal"` |
+| Container could not start                  | `503 compiler_unavailable`                 | `status: "failed"`, `error.reason: "compiler_unavailable"` |
 
 A `422` body looks like this:
 

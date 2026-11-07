@@ -45,39 +45,90 @@ export class DockerSiblingCompiler implements Compiler {
   async version(): Promise<string> {
     if (this.versionCache) return this.versionCache;
     try {
-      const info = await this.docker.getImage(this.opts.image).inspect();
-      const label = info.Config?.Labels?.["org.opencontainers.image.version"];
-      const digest = (info.RepoDigests?.[0] ?? info.Id).split("@").pop() ?? info.Id;
-      this.versionCache = `${this.opts.image}#${label ?? digest.slice(7, 19)}`;
-      return this.versionCache;
+      return await this.inspect();
     } catch (error) {
       if (this.opts.pullIfMissing && isNotFound(error)) {
         await this.pull();
         return this.version();
       }
-      throw new CompilerUnavailableError(
-        `Compiler image ${this.opts.image} is not available: ${message(error)}`,
-      );
+      throw unavailable(this.opts.image, error);
     }
   }
 
+  /**
+   * Checks the daemon and that the image is present right now (not a cached answer), so the
+   * health check fails when the image has been pruned from the host. A missing image starts
+   * a background pull instead of blocking the health request on a ~500 MB download.
+   */
   async ping(): Promise<{ ok: boolean; detail?: string }> {
     try {
       await this.docker.ping();
-      await this.version();
-      return { ok: true, detail: this.versionCache };
     } catch (error) {
-      return { ok: false, detail: message(error) };
+      return { ok: false, detail: `Docker is not reachable: ${message(error)}` };
+    }
+    try {
+      return { ok: true, detail: await this.inspect() };
+    } catch (error) {
+      this.versionCache = undefined;
+      if (this.opts.pullIfMissing && isNotFound(error)) {
+        void this.pull().catch((err) =>
+          this.opts.logger.error({ err }, "background compiler image pull failed"),
+        );
+        return { ok: false, detail: `Compiler image ${this.opts.image} is missing; pulling it` };
+      }
+      return { ok: false, detail: unavailable(this.opts.image, error).message };
     }
   }
 
-  async pull(): Promise<void> {
+  /** Pulls the image. Concurrent callers share one pull. */
+  pull(): Promise<void> {
+    this.pulling ??= this.doPull().finally(() => {
+      this.pulling = undefined;
+    });
+    return this.pulling;
+  }
+
+  private pulling: Promise<void> | undefined;
+
+  private async doPull(): Promise<void> {
     this.opts.logger.info({ image: this.opts.image }, "pulling compiler image");
     const stream = await this.docker.pull(this.opts.image);
     await new Promise<void>((resolve, reject) => {
       this.docker.modem.followProgress(stream, (err) => (err ? reject(err) : resolve()));
     });
     this.versionCache = undefined;
+    this.opts.logger.info({ image: this.opts.image }, "compiler image pulled");
+  }
+
+  private async inspect(): Promise<string> {
+    const info = await this.docker.getImage(this.opts.image).inspect();
+    const label = info.Config?.Labels?.["org.opencontainers.image.version"];
+    const digest = (info.RepoDigests?.[0] ?? info.Id).split("@").pop() ?? info.Id;
+    this.versionCache = `${this.opts.image}#${label ?? digest.slice(7, 19)}`;
+    return this.versionCache;
+  }
+
+  /**
+   * Creates the compile container. If the image vanished from the host (for example a
+   * scheduled `docker image prune`, since no container keeps it in use between jobs), it is
+   * pulled once and the create is retried; otherwise the failure is reported as
+   * compiler_unavailable rather than as a LaTeX or internal error.
+   */
+  private async createContainer(spec: Docker.ContainerCreateOptions): Promise<Docker.Container> {
+    try {
+      return await this.docker.createContainer(spec);
+    } catch (error) {
+      if (!isNotFound(error)) throw error;
+      this.versionCache = undefined;
+      if (!this.opts.pullIfMissing) throw unavailable(this.opts.image, error);
+      this.opts.logger.warn({ image: this.opts.image }, "compiler image missing; pulling");
+      try {
+        await this.pull();
+        return await this.docker.createContainer(spec);
+      } catch (retryError) {
+        throw unavailable(this.opts.image, retryError);
+      }
+    }
   }
 
   async compile(request: CompileRequest, signal: AbortSignal): Promise<RawCompileOutput> {
@@ -93,7 +144,7 @@ export class DockerSiblingCompiler implements Compiler {
     const seccomp = await this.loadSeccomp();
     if (seccomp) securityOpt.push(`seccomp=${seccomp}`);
 
-    const container = await this.docker.createContainer({
+    const container = await this.createContainer({
       Image: this.opts.image,
       Cmd: [workspace.engine, workspace.entrypoint, options.bibliography, String(timeoutS)],
       User: this.opts.user,
@@ -236,6 +287,12 @@ async function readOptionalText(file: string, max: number): Promise<string | nul
 
 function isNotFound(error: unknown): boolean {
   return (error as { statusCode?: number }).statusCode === 404;
+}
+
+function unavailable(image: string, error: unknown): CompilerUnavailableError {
+  return new CompilerUnavailableError(
+    `Compiler image ${image} is not available: ${message(error)}`,
+  );
 }
 
 function message(error: unknown): string {

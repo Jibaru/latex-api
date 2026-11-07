@@ -2,7 +2,7 @@ import path from "node:path";
 import { CompileFailedError, type Job, type LatexApiError } from "@jibaru/latex-api-sdk";
 import type { ArgsDef } from "citty";
 import { rt } from "../blocks/runtime";
-import { colors } from "../blocks/style";
+import { colors, sanitize } from "../blocks/style";
 import { leaf, t } from "../command";
 import type { AppContext } from "../context";
 import { formatDiagnostics, formatJobFailure } from "../diagnostics";
@@ -60,6 +60,15 @@ export const pdfShape = t.object({ path: t.string(), bytes: t.number() });
 
 /** Builds a compile_failed error carrying the diagnostics an agent needs to fix the source. */
 export function jobFailure(job: Job): CliError {
+  // Server-side failures are not LaTeX errors: same code and exit as a 5xx on the sync path.
+  const serverReason = job.error?.reason;
+  if (serverReason === "compiler_unavailable" || serverReason === "internal") {
+    return new CliError(serverReason, sanitize(job.error?.message ?? "The server failed"), {
+      exitCode: EXIT.AUTH,
+      hint: "The server failed, not your document; retry, or check `latex-api health`",
+      details: { jobId: job.id, status: job.status },
+    });
+  }
   const reason =
     job.status === "timed_out"
       ? "Compilation timed out"
