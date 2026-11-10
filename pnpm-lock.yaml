@@ -260,6 +260,9 @@ importers:
         specifier: ^3.4.0
         version: 3.4.0
     devDependencies:
+      '@electric-sql/pglite':
+        specifier: ^0.5.16
+        version: 0.5.16
       '@latex-api/config':
         specifier: workspace:*
         version: link:../config
@@ -605,6 +608,9 @@ packages:
 
   '@codemirror/view@6.43.15':
     resolution: {integrity: sha512-HHsfpqFeHyXLs983pSRe38Xajs0vFWZQ2BuX0m7Ki8w3jZ5iD8cuR3lBz2/5/X53Dhf32SBHKh6rtSTB6tKeGw==}
+
+  '@electric-sql/pglite@0.5.16':
+    resolution: {integrity: sha512-Nj8KcIsJL748W408U2N8q4+9IlONdpRIU8MJypIAAINMJ5nqKyqpX7Mgg/5XKkXiAib3AoZGR6hnJFlrlLBrcg==}
 
   '@emnapi/runtime@1.11.3':
     resolution: {integrity: sha512-Xz4Tpyki7XyrpbUK1jR1AhdAdaXyhhY4lZ3neLodmhpuWfy2PAQN5B46sAiU4liOXGLkHypn/qU+jvfWSCYYLA==}
@@ -4240,6 +4246,8 @@ snapshots:
       crelt: 1.0.7
       style-mod: 4.1.4
       w3c-keyname: 2.2.8
+
+  '@electric-sql/pglite@0.5.16': {}
 
   '@emnapi/runtime@1.11.3':
     dependencies:

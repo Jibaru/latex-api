@@ -22,6 +22,7 @@
     "yauzl": "^3.4.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.16",
     "@latex-api/config": "workspace:*",
     "@types/dockerode": "^4.0.2",
     "@types/node": "^22.0.0",

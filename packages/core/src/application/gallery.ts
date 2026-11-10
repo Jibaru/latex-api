@@ -393,26 +393,38 @@ export class SearchGallery {
   }
 }
 
+/** Function words that would match almost any description (Spanish and English). */
+const STOPWORDS = new Set(
+  (
+    "de del la las el los un una unos unas y o u e en con sin por para al a lo que se su sus mi mis " +
+    "como mas muy es son the a an and or of for to in on with without by at is are my your this that"
+  ).split(" "),
+);
+
+function normalizeText(s: string): string {
+  return s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase();
+}
+
 function tokens(q: string): string[] {
-  return q
-    .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
+  return normalizeText(q)
     .split(/[^a-z0-9]+/)
-    .filter((t) => t.length >= 2);
+    .filter((t) => t.length >= 2 && !STOPWORDS.has(t));
+}
+
+/** True when some word of `text` starts with `term` ("curri" matches "curriculum"). */
+function hasWord(text: string, term: string): boolean {
+  return normalizeText(text)
+    .split(/[^a-z0-9]+/)
+    .some((word) => (term.length >= 3 ? word.startsWith(term) : word === term));
 }
 
 /** Small bonus per query term found in the name (0.06), tags (0.05) or description (0.02). */
 function keywordScore(t: GalleryTemplate, terms: string[]): number {
-  if (terms.length === 0) return 0;
-  const norm = (s: string) => s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase();
-  const name = norm(t.name);
-  const description = norm(t.description);
   let score = 0;
   for (const term of terms) {
-    if (name.includes(term)) score += 0.06;
-    if (t.tags.some((tag) => tag.includes(term))) score += 0.05;
-    if (description.includes(term)) score += 0.02;
+    if (hasWord(t.name, term)) score += 0.06;
+    if (t.tags.some((tag) => hasWord(tag, term))) score += 0.05;
+    if (hasWord(t.description, term)) score += 0.02;
   }
   return score;
 }

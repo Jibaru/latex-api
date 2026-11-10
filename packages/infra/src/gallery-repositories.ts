@@ -137,14 +137,18 @@ export class PgGalleryRepository implements GalleryRepository {
   }
 
   async update(t: GalleryTemplate): Promise<void> {
-    const v = values(t);
+    // stars and downloads are counters maintained by their own statements. Every parameter
+    // sent must appear in the SQL: Postgres cannot type an unused one and rejects the query.
     const cols = `${BASE_COLUMNS}, embedding, embedding_model`.split(", ");
-    // stars/downloads/reports are counters maintained by their own statements.
-    const sets = cols
-      .map((c, i) => [c, i] as const)
-      .filter(([c]) => c !== "id" && c !== "stars" && c !== "downloads")
-      .map(([c, i]) => `${c} = $${i + 1}`);
-    await this.pool.query(`UPDATE gallery_templates SET ${sets.join(", ")} WHERE id = $1`, v);
+    const all = values(t);
+    const kept = cols
+      .map((c, i) => ({ c, v: all[i] }))
+      .filter(({ c }) => c !== "id" && c !== "stars" && c !== "downloads");
+    const sets = kept.map(({ c }, i) => `${c} = $${i + 2}`);
+    await this.pool.query(`UPDATE gallery_templates SET ${sets.join(", ")} WHERE id = $1`, [
+      t.id,
+      ...kept.map(({ v }) => v),
+    ]);
   }
 
   async get(id: string): Promise<GalleryTemplate | null> {

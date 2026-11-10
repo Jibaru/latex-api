@@ -171,6 +171,12 @@ describe("public template gallery", () => {
     expect(q.total).toBe(1);
     expect(q.items[0]?.name).toBe("Currículum moderno");
 
+    // Function words ("de") are not keyword matches.
+    const unrelated = (await (
+      await ctx.app.request(`/v1/gallery?q=${encodeURIComponent("receta de cocina")}`)
+    ).json()) as { total: number };
+    expect(unrelated.total).toBe(0);
+
     const tagged = (await (await ctx.app.request("/v1/gallery?tags=poster")).json()) as {
       items: Item[];
     };
