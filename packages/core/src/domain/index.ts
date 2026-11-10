@@ -2,6 +2,7 @@ export * from "./auth";
 export * from "./diagnostic";
 export * from "./engine";
 export * from "./errors";
+export * from "./gallery";
 export * from "./job";
 export * from "./limits";
 export * from "./log-parser";

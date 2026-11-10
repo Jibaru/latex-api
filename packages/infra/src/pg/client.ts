@@ -76,6 +76,57 @@ const MIGRATIONS: Array<{ id: string; sql: string }> = [
       CREATE INDEX IF NOT EXISTS jobs_owner_idx ON jobs (principal_name, created_at DESC);
     `,
   },
+  {
+    id: "0003_gallery",
+    sql: `
+      CREATE TABLE IF NOT EXISTS gallery_templates (
+        id           TEXT PRIMARY KEY,
+        slug         TEXT NOT NULL,
+        name         TEXT NOT NULL,
+        description  TEXT NOT NULL,
+        category     TEXT NOT NULL,
+        tags         TEXT[] NOT NULL DEFAULT '{}',
+        engine       TEXT NOT NULL,
+        entrypoint   TEXT NOT NULL,
+        author_id    TEXT NOT NULL,
+        author_name  TEXT NOT NULL,
+        author_image TEXT,
+        license      TEXT NOT NULL,
+        version      INTEGER NOT NULL,
+        file_count   INTEGER NOT NULL,
+        total_bytes  BIGINT NOT NULL,
+        pages        INTEGER,
+        stars        INTEGER NOT NULL DEFAULT 0,
+        downloads    INTEGER NOT NULL DEFAULT 0,
+        reports      INTEGER NOT NULL DEFAULT 0,
+        hidden       BOOLEAN NOT NULL DEFAULT false,
+        created_at   TIMESTAMPTZ NOT NULL,
+        updated_at   TIMESTAMPTZ NOT NULL,
+        excerpt      TEXT,
+        embedding    REAL[]
+      );
+      CREATE INDEX IF NOT EXISTS gallery_stars_idx ON gallery_templates (stars DESC, created_at DESC);
+      CREATE INDEX IF NOT EXISTS gallery_recent_idx ON gallery_templates (created_at DESC);
+      CREATE INDEX IF NOT EXISTS gallery_author_idx ON gallery_templates (author_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS gallery_tags_idx ON gallery_templates USING GIN (tags);
+
+      CREATE TABLE IF NOT EXISTS gallery_stars (
+        template_id TEXT NOT NULL REFERENCES gallery_templates(id) ON DELETE CASCADE,
+        user_id     TEXT NOT NULL,
+        created_at  TIMESTAMPTZ NOT NULL,
+        PRIMARY KEY (template_id, user_id)
+      );
+      CREATE INDEX IF NOT EXISTS gallery_stars_user_idx ON gallery_stars (user_id, created_at DESC);
+
+      CREATE TABLE IF NOT EXISTS gallery_reports (
+        template_id TEXT NOT NULL REFERENCES gallery_templates(id) ON DELETE CASCADE,
+        user_id     TEXT NOT NULL,
+        reason      TEXT NOT NULL,
+        created_at  TIMESTAMPTZ NOT NULL,
+        PRIMARY KEY (template_id, user_id)
+      );
+    `,
+  },
 ];
 
 /** Tiny forward-only migrator; keeps the API free of a migration toolchain at runtime. */

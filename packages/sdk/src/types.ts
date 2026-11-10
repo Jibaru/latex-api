@@ -3,6 +3,7 @@ import type {
   BibliographyMode,
   Diagnostic,
   Engine,
+  GalleryCategory,
   Job,
 } from "./client/types.gen";
 
@@ -147,6 +148,44 @@ export type DevicePollResult =
       expiresAt?: string;
       user: { id: string; email?: string } | null;
     };
+
+/** Query for `api.gallery.search`. */
+export interface GallerySearchInput {
+  /** Free text; ranked by meaning (multilingual) plus keyword matches. */
+  q?: string;
+  /** All of these tags must be present. */
+  tags?: string[];
+  category?: GalleryCategory;
+  sort?: "stars" | "recent" | "relevance";
+  /** Only your own templates (needs a user token). */
+  mine?: boolean;
+  /** Only templates you starred (needs a user token). */
+  starred?: boolean;
+  limit?: number;
+  offset?: number;
+}
+
+interface GalleryPublishBase {
+  name?: string;
+  description?: string;
+  category?: GalleryCategory;
+  tags?: string[];
+  entrypoint?: string;
+  engine?: Engine;
+  /** Must be true: gallery templates are shared under CC-BY 4.0. */
+  acceptLicense: boolean;
+}
+
+export type GalleryPublishInput =
+  | (GalleryPublishBase & { zip: Uint8Array })
+  | (GalleryPublishBase & { files: ProjectFileInput[] });
+
+export interface GalleryUpdateInput {
+  name?: string;
+  description?: string;
+  category?: GalleryCategory;
+  tags?: string[];
+}
 
 export const TERMINAL_STATUSES: ReadonlySet<JobStatus> = new Set<JobStatus>([
   "succeeded",

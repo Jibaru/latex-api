@@ -12,6 +12,8 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: { unoptimized: true },
   typescript: { ignoreBuildErrors: false },
+  // Gallery uploads go through a server action (zip of the project, up to 20 MB).
+  experimental: { serverActions: { bodySizeLimit: "21mb" } },
 };
 
 const withMDX = createMDX();

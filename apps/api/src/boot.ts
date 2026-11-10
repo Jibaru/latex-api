@@ -84,6 +84,8 @@ async function doBoot(): Promise<void> {
     .then((v) => logger.info({ compiler: v }, "compiler image ready"))
     .catch((error) => logger.error({ err: error }, "compiler image unavailable"));
 
+  if ("warmUp" in container.embedder) container.embedder.warmUp();
+
   const shutdown = async (signal: string) => {
     logger.info({ signal }, "shutting down");
     try {

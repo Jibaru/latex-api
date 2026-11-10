@@ -27,6 +27,13 @@ export interface InfraConfig {
   clerkJwtKey: string | undefined;
   /** Origins allowed to present Clerk session tokens (azp claim). */
   clerkAuthorizedParties: string[];
+  /** User ids (Clerk) allowed to hide or delete any gallery template. */
+  galleryAdmins: string[];
+  /** `local` runs the embedding model in-process; `hashing` is a keyword-only fallback. */
+  embeddings: "local" | "hashing";
+  embeddingModel: string | undefined;
+  /** Cache directory for downloaded model weights. */
+  modelsDir: string;
 }
 
 function int(env: EnvSource, key: string, fallback: number): number {
@@ -108,5 +115,14 @@ export function loadConfig(env: EnvSource = process.env): InfraConfig {
       .split(",")
       .map((s) => s.trim().replace(/\/$/, ""))
       .filter(Boolean),
+    galleryAdmins: (env.GALLERY_ADMINS ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean),
+    embeddings: env.EMBEDDINGS === "hashing" ? "hashing" : "local",
+    embeddingModel: env.EMBEDDING_MODEL || undefined,
+    modelsDir: path.resolve(
+      /*turbopackIgnore: true*/ env.MODELS_DIR ?? path.join(dataDir, "models"),
+    ),
   };
 }

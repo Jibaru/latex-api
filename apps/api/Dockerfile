@@ -31,6 +31,14 @@ ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0 NEXT_TELEMETRY_DISABLED=1 \
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends tini curl acl && rm -rf /var/lib/apt/lists/* \
  && mkdir -p /data && chown node:node /data
+# Gallery search embeddings: transformers.js + onnxruntime-node (native), installed outside the
+# Next standalone tree because output tracing does not pick up the native binaries.
+# The model weights (~120 MB) are downloaded on first use into $MODELS_DIR (data volume).
+RUN mkdir -p /opt/embed && cd /opt/embed && npm init -y >/dev/null \
+ && npm install --omit=dev --no-audit --no-fund @huggingface/transformers@4.3.2 \
+ && npm cache clean --force
+ENV TRANSFORMERS_MODULE=/opt/embed/node_modules/@huggingface/transformers/dist/transformers.node.mjs \
+    MODELS_DIR=/data/models
 COPY --from=builder --chown=node:node /repo/apps/api/.next/standalone ./
 COPY --from=builder --chown=node:node /repo/apps/api/.next/static ./apps/api/.next/static
 COPY --from=builder --chown=node:node /repo/apps/api/public ./apps/api/public

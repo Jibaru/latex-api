@@ -28,6 +28,8 @@ const API_DEFINITIONS = [
   "User",
   "Template",
   "TemplateFile",
+  "GalleryTemplate",
+  "GalleryTemplateDetail",
   "Limits",
   "Stats",
   "Health",

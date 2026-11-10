@@ -17,6 +17,7 @@ import {
 import { authCommand } from "./commands/auth";
 import { compileCommand, printFailure } from "./commands/compile";
 import { doctorCommand } from "./commands/doctor";
+import { galleryGroup } from "./commands/gallery";
 import { jobsGroup } from "./commands/jobs";
 import { healthCommand, limitsCommand, statsCommand } from "./commands/meta";
 import { profileGroup } from "./commands/profile";
@@ -108,6 +109,7 @@ export const root: GroupCommand = group({
     profileGroup,
     jobsGroup,
     templatesGroup,
+    galleryGroup,
     skillGroup,
     doctorCommand,
     schemaCommand,

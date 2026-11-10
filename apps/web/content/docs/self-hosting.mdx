@@ -75,6 +75,10 @@ Put a reverse proxy in front with `/`, `/docs` going to `web` and `/v1`, `/opena
 | `TEMPLATES_DIR`           | no       | bundled                 | Directory of templates                                                 |
 | `DEMO_API_KEY`            | no       |                         | Enables the playground endpoint                                        |
 | `LOG_LEVEL`               | no       | `info`                  | pino level                                                             |
+| `GALLERY_ADMINS`          | no       |                         | Comma-separated user ids that can hide and delete gallery templates    |
+| `EMBEDDINGS`              | no       | `local`                 | `local` runs the gallery search model in-process; `hashing` disables it (keyword search) |
+| `EMBEDDING_MODEL`         | no       | `Xenova/multilingual-e5-small` | Any Hugging Face feature-extraction model with ONNX weights     |
+| `MODELS_DIR`              | no       | `$DATA_DIR/models`      | Where model weights are cached (downloaded on first use, ~120 MB)      |
 | Limits                    | no       | see [Limits](/docs/limits) | `MAX_UPLOAD_BYTES`, `SYNC_TIMEOUT_MS`, `JOB_MEMORY`, ...             |
 
 The web image reads `NEXT_PUBLIC_API_URL` at build time (leave empty when both share a domain) and `API_INTERNAL_URL` at runtime for server-side fetches.

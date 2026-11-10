@@ -4,7 +4,8 @@
 # Required environment (set in Dokploy > Compose > Environment):
 #   CLERK_SECRET_KEY, DATABASE_URL, PUBLIC_URL
 # Optional: API_KEYS (operator keys, name:secret,...)
-# Optional: IMAGE_TAG (default latest), MAX_CONCURRENT_JOBS, JOB_MEMORY, COMPILER_RUNTIME, LOG_LEVEL
+# Optional: IMAGE_TAG (default latest), MAX_CONCURRENT_JOBS, JOB_MEMORY, COMPILER_RUNTIME, LOG_LEVEL,
+#   GALLERY_ADMINS (comma-separated Clerk user ids), EMBEDDINGS (local | hashing)
 
 services:
   api:
@@ -36,6 +37,10 @@ services:
       ARTIFACT_TTL_HOURS: ${ARTIFACT_TTL_HOURS:-24}
       RATE_LIMIT_PER_KEY_PER_HOUR: ${RATE_LIMIT_PER_KEY_PER_HOUR:-60}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      # Gallery moderators (Clerk user ids, not secrets): can hide, unhide and delete any template.
+      GALLERY_ADMINS: ${GALLERY_ADMINS:-user_3L6V7u9pwZfcWyJRBD8oC1V0i1l,user_3L4qD1frGO4tJSX7X7iGszIMwDP}
+      # Gallery search runs multilingual-e5-small in-process; weights are cached in /data/models.
+      EMBEDDINGS: ${EMBEDDINGS:-local}
     volumes:
       # Host bind (not a named volume): compile containers mount sub-directories of it.
       - /opt/latex-api/data:/data
@@ -52,7 +57,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1g
+          # The embedding model adds ~300 MB once loaded.
+          memory: 1536m
     networks:
       - dokploy-network
 

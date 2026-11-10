@@ -8,7 +8,8 @@ import { ThemeToggle } from "./theme-toggle";
 const items = [
   { href: "/docs", label: "Docs", phone: true },
   { href: "/reference", label: "Reference", phone: false },
-  { href: "#templates", label: "Templates", phone: false },
+  { href: "/gallery", label: "Gallery", phone: true },
+  { href: "/#templates", label: "Templates", phone: false },
   { href: "#playground", label: "Playground", phone: false },
 ];
 

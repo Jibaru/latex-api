@@ -5,6 +5,8 @@ import type {
   CreatedApiToken,
   DeviceAuthorizationStart,
   DeviceToken,
+  GalleryPage,
+  GalleryTemplateDetail,
   Health,
   Job,
   JobEnvelope,
@@ -13,7 +15,7 @@ import type {
   Stats,
   Template,
 } from "./client/types.gen";
-import { envVar, isBrowser } from "./encoding";
+import { encodeText, envVar, isBrowser } from "./encoding";
 import { errorFromRawResponse, errorFromResponse, isProblem, LatexApiError } from "./errors";
 import { parseSse, type SseMessage } from "./sse";
 import { type PreparedBody, prepareCompileBody, prepareTemplateBody } from "./transport";
@@ -27,6 +29,9 @@ import {
   type DevicePollResult,
   type DeviceStartInput,
   type EventsOptions,
+  type GalleryPublishInput,
+  type GallerySearchInput,
+  type GalleryUpdateInput,
   isTerminalStatus,
   type JobEvent,
   type LatexApiOptions,
@@ -35,7 +40,7 @@ import {
   type WaitOptions,
 } from "./types";
 
-export const SDK_VERSION = "0.2.0";
+export const SDK_VERSION = "0.3.0";
 export const DEFAULT_BASE_URL = "https://latex-api.crafter.run";
 
 const BEARER = [{ scheme: "bearer", type: "http" }] as const;
@@ -390,6 +395,190 @@ export class TemplatesApi {
   }
 }
 
+/**
+ * The public community gallery under `/v1/gallery`. Browsing is anonymous; publishing,
+ * starring and reporting need a signed-in user's token.
+ */
+export class GalleryApi {
+  constructor(private readonly api: LatexApi) {}
+
+  /** `GET /v1/gallery`: browse (sorted by stars or date) or search with `q` (by meaning). */
+  async search(
+    input: GallerySearchInput = {},
+    opts: RequestCallOptions = {},
+  ): Promise<GalleryPage> {
+    const query: Record<string, string | number> = {};
+    if (input.q) query.q = input.q;
+    if (input.tags?.length) query.tags = input.tags.join(",");
+    if (input.category) query.category = input.category;
+    if (input.sort) query.sort = input.sort;
+    if (input.mine) query.mine = "true";
+    if (input.starred) query.starred = "true";
+    if (input.limit !== undefined) query.limit = input.limit;
+    if (input.offset !== undefined) query.offset = input.offset;
+    const { data } = unwrap<GalleryPage>(
+      await ops.getV1Gallery({
+        client: this.api.client,
+        query: query as never,
+        security: BEARER as unknown as never,
+        signal: opts.signal,
+      }),
+    );
+    return data;
+  }
+
+  /** `GET /v1/gallery/tags`: most used tags. */
+  async tags(
+    limit?: number,
+    opts: RequestCallOptions = {},
+  ): Promise<Array<{ tag: string; count: number }>> {
+    const { data } = unwrap<{ tags: Array<{ tag: string; count: number }> }>(
+      await ops.getV1GalleryTags({
+        client: this.api.client,
+        query: limit === undefined ? undefined : { limit },
+        signal: opts.signal,
+      }),
+    );
+    return data.tags;
+  }
+
+  /** `GET /v1/gallery/:id`. */
+  async get(id: string, opts: RequestCallOptions = {}): Promise<GalleryTemplateDetail> {
+    const { data } = unwrap<{ template: GalleryTemplateDetail }>(
+      await ops.getV1GalleryById({
+        client: this.api.client,
+        path: { id },
+        security: BEARER as unknown as never,
+        signal: opts.signal,
+      }),
+    );
+    return data.template;
+  }
+
+  /**
+   * `POST /v1/gallery` (or `PUT /v1/gallery/:id` with `replaceId`): compiles the project and
+   * publishes it under CC-BY 4.0. Throws `CompileFailedError` when LaTeX reports errors.
+   */
+  async publish(
+    input: GalleryPublishInput,
+    opts: RequestCallOptions & { replaceId?: string } = {},
+  ): Promise<GalleryTemplateDetail> {
+    const form = new FormData();
+    if ("zip" in input) {
+      form.append(
+        "project",
+        new Blob([input.zip as BlobPart], { type: "application/zip" }),
+        "project.zip",
+      );
+    } else {
+      for (const f of input.files) {
+        const bytes = typeof f.content === "string" ? encodeText(f.content) : f.content;
+        form.append("files", new Blob([bytes as BlobPart]), f.path);
+      }
+    }
+    if (input.name !== undefined) form.append("name", input.name);
+    if (input.description !== undefined) form.append("description", input.description);
+    if (input.category !== undefined) form.append("category", input.category);
+    if (input.tags !== undefined) form.append("tags", JSON.stringify(input.tags));
+    if (input.entrypoint) form.append("entrypoint", input.entrypoint);
+    if (input.engine) form.append("engine", input.engine);
+    form.append("acceptLicense", input.acceptLicense ? "true" : "false");
+    const request = {
+      url: opts.replaceId ? "/v1/gallery/{id}" : "/v1/gallery",
+      path: opts.replaceId ? { id: opts.replaceId } : {},
+      body: form,
+      bodySerializer: null,
+      headers: { Accept: "application/json", "Content-Type": null },
+      security: BEARER as unknown as never,
+      signal: opts.signal,
+    };
+    const result = opts.replaceId
+      ? await this.api.client.put(request)
+      : await this.api.client.post(request);
+    return unwrap<{ template: GalleryTemplateDetail }>(result as RawResult).data.template;
+  }
+
+  /** `PATCH /v1/gallery/:id`: edit name, description, category or tags (author only). */
+  async update(
+    id: string,
+    input: GalleryUpdateInput,
+    opts: RequestCallOptions = {},
+  ): Promise<GalleryTemplateDetail> {
+    const { data } = unwrap<{ template: GalleryTemplateDetail }>(
+      await ops.patchV1GalleryById({
+        client: this.api.client,
+        path: { id },
+        body: input,
+        signal: opts.signal,
+      }),
+    );
+    return data.template;
+  }
+
+  /** `DELETE /v1/gallery/:id` (author only). */
+  async delete(id: string, opts: RequestCallOptions = {}): Promise<void> {
+    unwrap(
+      await ops.deleteV1GalleryById({ client: this.api.client, path: { id }, signal: opts.signal }),
+    );
+  }
+
+  /** `PUT` (star) or `DELETE` (unstar) `/v1/gallery/:id/star`. */
+  async star(
+    id: string,
+    starred = true,
+    opts: RequestCallOptions = {},
+  ): Promise<{ stars: number; starred: boolean }> {
+    const options = { client: this.api.client, path: { id }, signal: opts.signal };
+    const result = starred
+      ? await ops.putV1GalleryByIdStar(options)
+      : await ops.deleteV1GalleryByIdStar(options);
+    return unwrap<{ stars: number; starred: boolean }>(result).data;
+  }
+
+  /** `POST /v1/gallery/:id/report`. */
+  async report(
+    id: string,
+    reason: string,
+    opts: RequestCallOptions = {},
+  ): Promise<{ hidden: boolean }> {
+    const { data } = unwrap<{ hidden: boolean }>(
+      await ops.postV1GalleryByIdReport({
+        client: this.api.client,
+        path: { id },
+        body: { reason },
+        signal: opts.signal,
+      }),
+    );
+    return data;
+  }
+
+  /** `GET /v1/gallery/:id/archive`: the template files as a zip. */
+  async archive(id: string, opts: RequestCallOptions = {}): Promise<Uint8Array> {
+    const { data } = unwrap<ArrayBuffer>(
+      await ops.getV1GalleryByIdArchive({
+        client: this.api.client,
+        path: { id },
+        parseAs: "arrayBuffer",
+        signal: opts.signal,
+      }),
+    );
+    return toBytes(data);
+  }
+
+  /** `GET /v1/gallery/:id/pdf`: the compiled PDF of the published version. */
+  async pdf(id: string, opts: RequestCallOptions = {}): Promise<Uint8Array> {
+    const { data } = unwrap<ArrayBuffer>(
+      await ops.getV1GalleryByIdPdf({
+        client: this.api.client,
+        path: { id },
+        parseAs: "arrayBuffer",
+        signal: opts.signal,
+      }),
+    );
+    return toBytes(data);
+  }
+}
+
 /** Personal API tokens under `/v1/tokens` (secrets are only returned by `create`). */
 export class TokensApi {
   constructor(private readonly api: LatexApi) {}
@@ -474,6 +663,7 @@ export class LatexApi {
   readonly client: Client;
   readonly jobs: JobsApi;
   readonly templates: TemplatesApi;
+  readonly gallery: GalleryApi;
   readonly tokens: TokensApi;
   readonly auth: AuthApi;
   /** @internal */
@@ -513,6 +703,7 @@ export class LatexApi {
     );
     this.jobs = new JobsApi(this);
     this.templates = new TemplatesApi(this);
+    this.gallery = new GalleryApi(this);
     this.tokens = new TokensApi(this);
     this.auth = new AuthApi(this);
   }
@@ -643,6 +834,10 @@ export type {
   DeviceAuthorizationStart,
   DeviceToken,
   Diagnostic,
+  GalleryCategory,
+  GalleryPage,
+  GalleryTemplate,
+  GalleryTemplateDetail,
   Health,
   Job,
   JobEnvelope,

@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, ServerSentEventsResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteV1JobsByIdData, DeleteV1JobsByIdErrors, DeleteV1JobsByIdResponses, DeleteV1TokensByIdData, DeleteV1TokensByIdErrors, DeleteV1TokensByIdResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GetV1AuthDeviceByCodeData, GetV1AuthDeviceByCodeErrors, GetV1AuthDeviceByCodeResponses, GetV1JobsByIdData, GetV1JobsByIdErrors, GetV1JobsByIdEventsData, GetV1JobsByIdEventsErrors, GetV1JobsByIdEventsResponse, GetV1JobsByIdEventsResponses, GetV1JobsByIdLogData, GetV1JobsByIdLogErrors, GetV1JobsByIdLogResponses, GetV1JobsByIdPdfData, GetV1JobsByIdPdfErrors, GetV1JobsByIdPdfResponses, GetV1JobsByIdResponses, GetV1JobsData, GetV1JobsResponses, GetV1LimitsData, GetV1LimitsResponses, GetV1MeData, GetV1MeErrors, GetV1MeResponses, GetV1StatsData, GetV1StatsErrors, GetV1StatsResponses, GetV1TemplatesByIdArchiveData, GetV1TemplatesByIdArchiveErrors, GetV1TemplatesByIdArchiveResponses, GetV1TemplatesByIdData, GetV1TemplatesByIdErrors, GetV1TemplatesByIdFilesByPathData, GetV1TemplatesByIdFilesByPathErrors, GetV1TemplatesByIdFilesByPathResponses, GetV1TemplatesByIdPreviewData, GetV1TemplatesByIdPreviewErrors, GetV1TemplatesByIdPreviewResponses, GetV1TemplatesByIdResponses, GetV1TemplatesData, GetV1TemplatesResponses, GetV1TokensData, GetV1TokensErrors, GetV1TokensResponses, PostV1AuthDeviceByCodeApproveData, PostV1AuthDeviceByCodeApproveErrors, PostV1AuthDeviceByCodeApproveResponses, PostV1AuthDeviceByCodeDenyData, PostV1AuthDeviceByCodeDenyErrors, PostV1AuthDeviceByCodeDenyResponses, PostV1AuthDeviceData, PostV1AuthDeviceErrors, PostV1AuthDeviceResponses, PostV1AuthDeviceTokenData, PostV1AuthDeviceTokenErrors, PostV1AuthDeviceTokenResponses, PostV1CompileData, PostV1CompileErrors, PostV1CompileResponses, PostV1DemoCompileData, PostV1DemoCompileErrors, PostV1DemoCompileResponses, PostV1JobsData, PostV1JobsErrors, PostV1JobsResponses, PostV1TemplatesByIdCompileData, PostV1TemplatesByIdCompileErrors, PostV1TemplatesByIdCompileResponses, PostV1TemplatesByIdJobsData, PostV1TemplatesByIdJobsErrors, PostV1TemplatesByIdJobsResponses, PostV1TokensData, PostV1TokensErrors, PostV1TokensResponses } from './types.gen';
+import type { DeleteV1GalleryByIdData, DeleteV1GalleryByIdErrors, DeleteV1GalleryByIdResponses, DeleteV1GalleryByIdStarData, DeleteV1GalleryByIdStarErrors, DeleteV1GalleryByIdStarResponses, DeleteV1JobsByIdData, DeleteV1JobsByIdErrors, DeleteV1JobsByIdResponses, DeleteV1TokensByIdData, DeleteV1TokensByIdErrors, DeleteV1TokensByIdResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GetV1AuthDeviceByCodeData, GetV1AuthDeviceByCodeErrors, GetV1AuthDeviceByCodeResponses, GetV1GalleryByIdArchiveData, GetV1GalleryByIdArchiveErrors, GetV1GalleryByIdArchiveResponses, GetV1GalleryByIdData, GetV1GalleryByIdErrors, GetV1GalleryByIdPdfData, GetV1GalleryByIdPdfErrors, GetV1GalleryByIdPdfResponses, GetV1GalleryByIdResponses, GetV1GalleryByIdThumbnailData, GetV1GalleryByIdThumbnailErrors, GetV1GalleryByIdThumbnailResponses, GetV1GalleryData, GetV1GalleryErrors, GetV1GalleryResponses, GetV1GalleryTagsData, GetV1GalleryTagsResponses, GetV1JobsByIdData, GetV1JobsByIdErrors, GetV1JobsByIdEventsData, GetV1JobsByIdEventsErrors, GetV1JobsByIdEventsResponse, GetV1JobsByIdEventsResponses, GetV1JobsByIdLogData, GetV1JobsByIdLogErrors, GetV1JobsByIdLogResponses, GetV1JobsByIdPdfData, GetV1JobsByIdPdfErrors, GetV1JobsByIdPdfResponses, GetV1JobsByIdResponses, GetV1JobsData, GetV1JobsResponses, GetV1LimitsData, GetV1LimitsResponses, GetV1MeData, GetV1MeErrors, GetV1MeResponses, GetV1StatsData, GetV1StatsErrors, GetV1StatsResponses, GetV1TemplatesByIdArchiveData, GetV1TemplatesByIdArchiveErrors, GetV1TemplatesByIdArchiveResponses, GetV1TemplatesByIdData, GetV1TemplatesByIdErrors, GetV1TemplatesByIdFilesByPathData, GetV1TemplatesByIdFilesByPathErrors, GetV1TemplatesByIdFilesByPathResponses, GetV1TemplatesByIdPreviewData, GetV1TemplatesByIdPreviewErrors, GetV1TemplatesByIdPreviewResponses, GetV1TemplatesByIdResponses, GetV1TemplatesData, GetV1TemplatesResponses, GetV1TokensData, GetV1TokensErrors, GetV1TokensResponses, PatchV1GalleryByIdData, PatchV1GalleryByIdErrors, PatchV1GalleryByIdResponses, PostV1AuthDeviceByCodeApproveData, PostV1AuthDeviceByCodeApproveErrors, PostV1AuthDeviceByCodeApproveResponses, PostV1AuthDeviceByCodeDenyData, PostV1AuthDeviceByCodeDenyErrors, PostV1AuthDeviceByCodeDenyResponses, PostV1AuthDeviceData, PostV1AuthDeviceErrors, PostV1AuthDeviceResponses, PostV1AuthDeviceTokenData, PostV1AuthDeviceTokenErrors, PostV1AuthDeviceTokenResponses, PostV1CompileData, PostV1CompileErrors, PostV1CompileResponses, PostV1DemoCompileData, PostV1DemoCompileErrors, PostV1DemoCompileResponses, PostV1GalleryByIdReportData, PostV1GalleryByIdReportErrors, PostV1GalleryByIdReportResponses, PostV1GalleryData, PostV1GalleryErrors, PostV1GalleryResponses, PostV1JobsData, PostV1JobsErrors, PostV1JobsResponses, PostV1TemplatesByIdCompileData, PostV1TemplatesByIdCompileErrors, PostV1TemplatesByIdCompileResponses, PostV1TemplatesByIdJobsData, PostV1TemplatesByIdJobsErrors, PostV1TemplatesByIdJobsResponses, PostV1TokensData, PostV1TokensErrors, PostV1TokensResponses, PutV1GalleryByIdData, PutV1GalleryByIdErrors, PutV1GalleryByIdResponses, PutV1GalleryByIdStarData, PutV1GalleryByIdStarErrors, PutV1GalleryByIdStarResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -294,3 +294,120 @@ export const postV1TemplatesByIdJobs = <ThrowOnError extends boolean = false>(op
         ...options.headers
     }
 });
+
+/**
+ * Browse and search the public template gallery
+ *
+ * Without `q`, sorted by stars (default) or by date. With `q`, ranked by meaning (multilingual embeddings) plus keyword matches; `sort` can still reorder the matches. Send a token to get `starred` flags and to use `mine` or `starred`.
+ */
+export const getV1Gallery = <ThrowOnError extends boolean = false>(options?: Options<GetV1GalleryData, ThrowOnError>): RequestResult<GetV1GalleryResponses, GetV1GalleryErrors, ThrowOnError> => (options?.client ?? client).get<GetV1GalleryResponses, GetV1GalleryErrors, ThrowOnError>({ url: '/v1/gallery', ...options });
+
+/**
+ * Publish a template
+ *
+ * Compiles the project in the sandbox and publishes it only if it produces a PDF. Requires a signed-in user (a personal token or a browser session) and `acceptLicense: true`: gallery templates are shared under Creative Commons Attribution 4.0 International. On LaTeX errors the response is the same `422 compile_failed` as `/v1/compile`.
+ */
+export const postV1Gallery = <ThrowOnError extends boolean = false>(options?: Options<PostV1GalleryData, ThrowOnError>): RequestResult<PostV1GalleryResponses, PostV1GalleryErrors, ThrowOnError> => (options?.client ?? client).post<PostV1GalleryResponses, PostV1GalleryErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/gallery',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+/**
+ * Most used gallery tags
+ */
+export const getV1GalleryTags = <ThrowOnError extends boolean = false>(options?: Options<GetV1GalleryTagsData, ThrowOnError>): RequestResult<GetV1GalleryTagsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetV1GalleryTagsResponses, unknown, ThrowOnError>({ url: '/v1/gallery/tags', ...options });
+
+/**
+ * Delete your template
+ */
+export const deleteV1GalleryById = <ThrowOnError extends boolean = false>(options: Options<DeleteV1GalleryByIdData, ThrowOnError>): RequestResult<DeleteV1GalleryByIdResponses, DeleteV1GalleryByIdErrors, ThrowOnError> => (options.client ?? client).delete<DeleteV1GalleryByIdResponses, DeleteV1GalleryByIdErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/gallery/{id}',
+    ...options
+});
+
+/**
+ * Get a gallery template
+ */
+export const getV1GalleryById = <ThrowOnError extends boolean = false>(options: Options<GetV1GalleryByIdData, ThrowOnError>): RequestResult<GetV1GalleryByIdResponses, GetV1GalleryByIdErrors, ThrowOnError> => (options.client ?? client).get<GetV1GalleryByIdResponses, GetV1GalleryByIdErrors, ThrowOnError>({ url: '/v1/gallery/{id}', ...options });
+
+/**
+ * Edit metadata, or hide / unhide (moderators)
+ */
+export const patchV1GalleryById = <ThrowOnError extends boolean = false>(options: Options<PatchV1GalleryByIdData, ThrowOnError>): RequestResult<PatchV1GalleryByIdResponses, PatchV1GalleryByIdErrors, ThrowOnError> => (options.client ?? client).patch<PatchV1GalleryByIdResponses, PatchV1GalleryByIdErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/gallery/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Publish a new version of your template
+ *
+ * Same body as publishing; metadata fields you omit keep their current value.
+ */
+export const putV1GalleryById = <ThrowOnError extends boolean = false>(options: Options<PutV1GalleryByIdData, ThrowOnError>): RequestResult<PutV1GalleryByIdResponses, PutV1GalleryByIdErrors, ThrowOnError> => (options.client ?? client).put<PutV1GalleryByIdResponses, PutV1GalleryByIdErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/gallery/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Remove your star
+ */
+export const deleteV1GalleryByIdStar = <ThrowOnError extends boolean = false>(options: Options<DeleteV1GalleryByIdStarData, ThrowOnError>): RequestResult<DeleteV1GalleryByIdStarResponses, DeleteV1GalleryByIdStarErrors, ThrowOnError> => (options.client ?? client).delete<DeleteV1GalleryByIdStarResponses, DeleteV1GalleryByIdStarErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/gallery/{id}/star',
+    ...options
+});
+
+/**
+ * Star a template
+ */
+export const putV1GalleryByIdStar = <ThrowOnError extends boolean = false>(options: Options<PutV1GalleryByIdStarData, ThrowOnError>): RequestResult<PutV1GalleryByIdStarResponses, PutV1GalleryByIdStarErrors, ThrowOnError> => (options.client ?? client).put<PutV1GalleryByIdStarResponses, PutV1GalleryByIdStarErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/gallery/{id}/star',
+    ...options
+});
+
+/**
+ * Report a template
+ *
+ * One report per user. A template is hidden after several reports until a moderator reviews it.
+ */
+export const postV1GalleryByIdReport = <ThrowOnError extends boolean = false>(options: Options<PostV1GalleryByIdReportData, ThrowOnError>): RequestResult<PostV1GalleryByIdReportResponses, PostV1GalleryByIdReportErrors, ThrowOnError> => (options.client ?? client).post<PostV1GalleryByIdReportResponses, PostV1GalleryByIdReportErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/gallery/{id}/report',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Download the template files as a zip
+ */
+export const getV1GalleryByIdArchive = <ThrowOnError extends boolean = false>(options: Options<GetV1GalleryByIdArchiveData, ThrowOnError>): RequestResult<GetV1GalleryByIdArchiveResponses, GetV1GalleryByIdArchiveErrors, ThrowOnError> => (options.client ?? client).get<GetV1GalleryByIdArchiveResponses, GetV1GalleryByIdArchiveErrors, ThrowOnError>({ url: '/v1/gallery/{id}/archive', ...options });
+
+/**
+ * The compiled PDF of the published version
+ */
+export const getV1GalleryByIdPdf = <ThrowOnError extends boolean = false>(options: Options<GetV1GalleryByIdPdfData, ThrowOnError>): RequestResult<GetV1GalleryByIdPdfResponses, GetV1GalleryByIdPdfErrors, ThrowOnError> => (options.client ?? client).get<GetV1GalleryByIdPdfResponses, GetV1GalleryByIdPdfErrors, ThrowOnError>({ url: '/v1/gallery/{id}/pdf', ...options });
+
+/**
+ * PNG of the first page (600 px wide)
+ */
+export const getV1GalleryByIdThumbnail = <ThrowOnError extends boolean = false>(options: Options<GetV1GalleryByIdThumbnailData, ThrowOnError>): RequestResult<GetV1GalleryByIdThumbnailResponses, GetV1GalleryByIdThumbnailErrors, ThrowOnError> => (options.client ?? client).get<GetV1GalleryByIdThumbnailResponses, GetV1GalleryByIdThumbnailErrors, ThrowOnError>({ url: '/v1/gallery/{id}/thumbnail', ...options });

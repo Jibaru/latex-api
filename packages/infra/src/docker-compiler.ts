@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { PassThrough } from "node:stream";
@@ -8,6 +9,7 @@ import {
   type Limits,
   type Logger,
   type RawCompileOutput,
+  type Thumbnailer,
 } from "@latex-api/core";
 import Docker from "dockerode";
 import type { FsWorkspaces } from "./fs-workspaces";
@@ -33,7 +35,7 @@ const MAX_LOG = 8 * 1024 * 1024;
  * The container has no network, a read-only root filesystem, dropped capabilities and
  * cgroup limits; the only writable paths are the job workspace and a small tmpfs.
  */
-export class DockerSiblingCompiler implements Compiler {
+export class DockerSiblingCompiler implements Compiler, Thumbnailer {
   private readonly docker: Docker;
   private versionCache: string | undefined;
   private seccompJson: string | undefined;
@@ -244,6 +246,73 @@ export class DockerSiblingCompiler implements Compiler {
       pdf: pdf ?? undefined,
       durationMs,
     };
+  }
+
+  /**
+   * Renders page one of a PDF to a PNG (600 px wide) with pdftoppm from the compiler image,
+   * under the same sandbox as a compile. Returns null when the image has no pdftoppm.
+   */
+  async thumbnail(pdf: Uint8Array, signal?: AbortSignal): Promise<Uint8Array | null> {
+    const id = `thumb-${randomUUID()}`;
+    const localDir = this.opts.workspaces.dir(id);
+    await fs.mkdir(localDir, { recursive: true, mode: 0o777 });
+    await fs.chmod(localDir, 0o777).catch(() => undefined);
+    await fs.writeFile(path.join(localDir, "in.pdf"), pdf, { mode: 0o644 });
+    let container: Docker.Container | undefined;
+    const timer = setTimeout(
+      () => void container?.kill({ signal: "SIGKILL" }).catch(() => {}),
+      20_000,
+    );
+    const onAbort = () => void container?.kill({ signal: "SIGKILL" }).catch(() => undefined);
+    signal?.addEventListener("abort", onAbort, { once: true });
+    try {
+      container = await this.createContainer({
+        Image: this.opts.image,
+        Entrypoint: ["pdftoppm"],
+        Cmd: [
+          "-png",
+          "-f",
+          "1",
+          "-l",
+          "1",
+          "-singlefile",
+          "-scale-to-x",
+          "600",
+          "-scale-to-y",
+          "-1",
+          "in.pdf",
+          "thumb",
+        ],
+        User: this.opts.user,
+        WorkingDir: "/work",
+        Labels: { "latex-api.role": "compile", "latex-api.job": id },
+        HostConfig: {
+          NetworkMode: "none",
+          ReadonlyRootfs: true,
+          Binds: [`${this.opts.workspaces.hostDir(id)}:/work:rw`],
+          Tmpfs: { "/tmp": "rw,nosuid,nodev,noexec,size=64m" },
+          Memory: 512 * 1024 * 1024,
+          MemorySwap: 512 * 1024 * 1024,
+          NanoCpus: 1e9,
+          PidsLimit: 16,
+          CapDrop: ["ALL"],
+          SecurityOpt: ["no-new-privileges"],
+          ...(this.opts.runtime ? { Runtime: this.opts.runtime } : {}),
+        },
+      });
+      await container.start();
+      const wait = (await container.wait()) as { StatusCode: number };
+      if (wait.StatusCode !== 0) {
+        this.opts.logger.warn({ status: wait.StatusCode }, "pdftoppm failed");
+        return null;
+      }
+      return await readOptional(path.join(localDir, "thumb.png"));
+    } finally {
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", onAbort);
+      await container?.remove({ force: true, v: true }).catch(() => undefined);
+      await this.opts.workspaces.remove(id).catch(() => undefined);
+    }
   }
 
   /** Kills any leftover compile containers from a previous process (crash recovery). */

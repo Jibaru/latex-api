@@ -24,6 +24,11 @@ const VERBS = new Set([
   "install",
   "login",
   "logout",
+  // gallery: semantic search, publishing and stars have no closer canonical verb.
+  "search",
+  "publish",
+  "star",
+  "unstar",
 ]);
 
 /** Sub-resources read with an implicit "get": `jobs logs <id>`, `jobs pdf <id>`, `auth status`, `auth token`. */
@@ -111,6 +116,13 @@ describe("command vocabulary", () => {
       "templates init",
       "templates preview",
       "templates compile",
+      "gallery search",
+      "gallery get",
+      "gallery use",
+      "gallery publish",
+      "gallery star",
+      "gallery unstar",
+      "gallery remove",
       "skill get",
       "skill install",
       "doctor",

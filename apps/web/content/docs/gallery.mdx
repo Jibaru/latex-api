@@ -1,0 +1,86 @@
+---
+title: Community gallery
+description: Templates shared by other users. Search them by meaning, star them, download them, or publish your own.
+---
+
+The [gallery](/gallery) holds templates published by people who use the API. Every one compiled in the sandbox before it was accepted, and all of them are shared under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/): anyone may reuse and adapt them, crediting the author.
+
+Browsing is anonymous. Publishing, starring and reporting need a signed-in user: a personal token (`lta_…`) or a browser session. Operator keys from `API_KEYS` cannot publish, because a template needs an author.
+
+## Routes
+
+| Route                                  | Auth     | Returns                                                         |
+| -------------------------------------- | -------- | --------------------------------------------------------------- |
+| `GET /v1/gallery`                      | optional | A page of templates: `{ items, total, limit, offset, sort, semantic }` |
+| `GET /v1/gallery/tags`                 | no       | Most used tags with counts                                      |
+| `GET /v1/gallery/{id}`                 | optional | `{ template }`, plus `canEdit` and `canModerate` for the caller |
+| `GET /v1/gallery/{id}/archive`         | no       | The project as a zip (counts as a download)                     |
+| `GET /v1/gallery/{id}/pdf`             | no       | The compiled PDF of the published version                       |
+| `GET /v1/gallery/{id}/thumbnail`       | no       | PNG of the first page, 600 px wide                              |
+| `POST /v1/gallery`                     | user     | Compile and publish; `201 { template }`                         |
+| `PUT /v1/gallery/{id}`                 | author   | Publish a new version (same body); stars are kept               |
+| `PATCH /v1/gallery/{id}`               | author   | Edit `name`, `description`, `category`, `tags`                  |
+| `DELETE /v1/gallery/{id}`              | author   | `204`                                                           |
+| `PUT` / `DELETE /v1/gallery/{id}/star` | user     | `{ stars, starred }`; one star per user                         |
+| `POST /v1/gallery/{id}/report`         | user     | `{ hidden }`; one report per user                               |
+
+When you send a credential to the `GET` routes, each template carries `starred` for you, and `?mine=true` and `?starred=true` list your own templates (hidden ones included) and the ones you starred.
+
+## Searching
+
+```bash
+curl "https://latex-api.crafter.run/v1/gallery?q=tesis%20con%20normas%20apa&tags=spanish"
+```
+
+| Parameter  | Meaning                                                                  |
+| ---------- | ------------------------------------------------------------------------ |
+| `q`        | Free text in any language. Ranked by meaning plus keyword matches        |
+| `tags`     | Comma-separated; every tag must be present                               |
+| `category` | `paper`, `report`, `cv`, `poster`, `brochure`, `letter`, `other`         |
+| `sort`     | `relevance` (default with `q`), `stars` (default without), `recent`      |
+| `limit`, `offset` | Paging, up to 100 per page                                        |
+
+Search embeds the name, description, tags and the start of the main `.tex` with a multilingual model ([multilingual-e5-small](https://huggingface.co/intfloat/multilingual-e5-small)) that runs inside the API, so "CV for a data scientist" finds a résumé whose description says *hoja de vida*. A template matches when its meaning is close to the query or when a query word appears in its name, tags or description. `semantic: false` in the response means the model was not available and only keyword matches were returned.
+
+## Publishing
+
+The body is the same as [`/v1/compile`](/docs/compile) (JSON `files`, a multipart `project` zip, or `files[]` parts) plus the metadata:
+
+| Field           | Rules                                                              |
+| --------------- | ------------------------------------------------------------------ |
+| `name`          | 3 to 80 characters                                                 |
+| `description`   | 20 to 1000 characters                                              |
+| `category`      | One of the categories above (default `other`)                      |
+| `tags`          | Up to 8; lower-cased, accents removed (`Español` becomes `espanol`). Multipart takes them comma-separated |
+| `acceptLicense` | Must be `true`                                                     |
+
+```bash
+curl -X POST https://latex-api.crafter.run/v1/gallery \
+  -H "Authorization: Bearer $LATEX_API_TOKEN" \
+  -F project=@thesis.zip \
+  -F name="Tesis UNTELS" \
+  -F description="Plantilla de tesis con APA 7, índices y capítulos separados" \
+  -F category=report -F tags="tesis,apa,espanol" -F acceptLicense=true
+```
+
+The project is compiled first. If LaTeX fails, the response is the same `422 compile_failed` with diagnostics as a normal compile and nothing is published. On success the server keeps the files, the PDF and a PNG of page one. Each user can publish up to 50 templates and 10 publications per hour.
+
+With the CLI:
+
+```bash
+latex-api gallery publish ./thesis --name "Tesis UNTELS" \
+  --description "Plantilla de tesis con APA 7" --category report --tags tesis,apa --yes
+latex-api gallery publish ./thesis --update gt_4fK9aQ2LmZ --yes   # new version
+```
+
+## Using a template
+
+```bash
+latex-api gallery search "poster para congreso"
+latex-api gallery use gt_4fK9aQ2LmZ my-poster
+latex-api compile my-poster
+```
+
+## Moderation
+
+Anyone signed in can report a template once. After five reports it is hidden until a moderator reviews it; hidden templates are visible only to their author and to moderators. Moderators are the user ids listed in the server's `GALLERY_ADMINS` variable; they can hide, unhide and delete any template.

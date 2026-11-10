@@ -1,4 +1,5 @@
 import type { Engine } from "../domain/engine";
+import type { GalleryTemplate } from "../domain/gallery";
 import type { CompileJob, CompileOptions, JobEvent, JobStatus, Principal } from "../domain/job";
 import type { Project, ProjectFile } from "../domain/project";
 import type { Template } from "../domain/template";
@@ -141,6 +142,69 @@ export interface TemplateRepository {
   get(id: string): Promise<Template | null>;
   files(id: string): Promise<ProjectFile[] | null>;
   readFile(id: string, path: string): Promise<Uint8Array | null>;
+}
+
+// ---------------------------------------------------------------------------
+// Public gallery
+// ---------------------------------------------------------------------------
+
+export interface GalleryFilter {
+  category?: string;
+  /** Every tag must be present. */
+  tags?: string[];
+  authorId?: string;
+  /** Only templates this user starred. */
+  starredBy?: string;
+  includeHidden?: boolean;
+}
+
+export interface GalleryRepository {
+  insert(template: GalleryTemplate): Promise<void>;
+  update(template: GalleryTemplate): Promise<void>;
+  get(id: string): Promise<GalleryTemplate | null>;
+  delete(id: string): Promise<void>;
+  /** Sorted page without embeddings. */
+  list(
+    filter: GalleryFilter,
+    sort: "stars" | "recent",
+    limit: number,
+    offset: number,
+  ): Promise<{ items: GalleryTemplate[]; total: number }>;
+  /** Every matching template with its embedding, for in-process semantic ranking. */
+  candidates(filter: GalleryFilter): Promise<GalleryTemplate[]>;
+  countByAuthor(authorId: string): Promise<number>;
+  /** Adds a star; returns false if the user had already starred it. Keeps `stars` in sync. */
+  star(id: string, userId: string, at: Date): Promise<boolean>;
+  unstar(id: string, userId: string): Promise<boolean>;
+  /** Which of these ids the user starred. */
+  starredAmong(userId: string, ids: string[]): Promise<Set<string>>;
+  incrementDownloads(id: string): Promise<void>;
+  /** Records a report; returns false if this user already reported it. Keeps `reports` in sync. */
+  report(id: string, userId: string, reason: string, at: Date): Promise<boolean>;
+  /** Most used tags among visible templates. */
+  popularTags(limit: number): Promise<Array<{ tag: string; count: number }>>;
+}
+
+/** Turns text into vectors for semantic search (E5-style query/passage prefixes). */
+export interface Embedder {
+  readonly model: string;
+  embedPassage(text: string): Promise<number[]>;
+  embedQuery(text: string): Promise<number[]>;
+}
+
+/** Renders the first page of a PDF to a small PNG. */
+export interface Thumbnailer {
+  thumbnail(pdf: Uint8Array, signal?: AbortSignal): Promise<Uint8Array | null>;
+}
+
+/** Packs project files into a zip archive. */
+export interface Archiver {
+  zip(files: ProjectFile[]): Uint8Array;
+}
+
+/** Public profile of a signed-in user, for author bylines. */
+export interface UserDirectory {
+  profile(userId: string): Promise<{ name: string; imageUrl?: string } | null>;
 }
 
 // ---------------------------------------------------------------------------

@@ -67,16 +67,27 @@ export async function testContainer(env: Record<string, string> = {}): Promise<{
     PUBLIC_URL: "http://api.test",
     LOG_LEVEL: "silent",
     COMPILER_IMAGE: "fake",
+    EMBEDDINGS: "hashing",
+    GALLERY_ADMINS: "user_admin",
     ...env,
   });
   const container = build(config);
   const compiler = new FakeCompiler();
   container.deps.compiler = compiler;
+  container.galleryDeps.thumbnailer = {
+    thumbnail: async () => new Uint8Array([0x89, 0x50, 0x4e, 0x47]),
+  };
   // Browser sessions: "session.jwt.ada" is Ada, anything else is rejected.
   container.deps.sessions = {
     enabled: true,
     verify: async (token: string) =>
-      token === "session.jwt.ada" ? { id: "user_ada", email: "ada@example.com" } : null,
+      token === "session.jwt.ada"
+        ? { id: "user_ada", email: "ada@example.com" }
+        : token === "session.jwt.bob"
+          ? { id: "user_bob", email: "bob@example.com" }
+          : token === "session.jwt.admin"
+            ? { id: "user_admin", email: "admin@example.com" }
+            : null,
   };
   const { InlineJobQueue } = await import("@latex-api/infra");
   if (container.queue instanceof InlineJobQueue) {
@@ -99,3 +110,5 @@ export const auth = { authorization: "Bearer secret" };
 export const TEX = "\\documentclass{article}\\begin{document}Hello\\end{document}";
 
 export const session = { authorization: "Bearer session.jwt.ada" };
+export const bobSession = { authorization: "Bearer session.jwt.bob" };
+export const adminSession = { authorization: "Bearer session.jwt.admin" };

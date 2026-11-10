@@ -8,5 +8,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     changeFrequency: "weekly" as const,
     priority: page.slugs.length === 0 ? 0.8 : 0.6,
   }));
-  return [{ url: siteUrl, changeFrequency: "weekly", priority: 1 }, ...docs];
+  return [
+    { url: siteUrl, changeFrequency: "weekly", priority: 1 },
+    { url: `${siteUrl}/gallery`, changeFrequency: "daily", priority: 0.9 },
+    ...docs,
+  ];
 }

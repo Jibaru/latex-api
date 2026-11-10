@@ -5,6 +5,8 @@ export * from "./env";
 export * from "./fs-artifacts";
 export * from "./fs-templates";
 export * from "./fs-workspaces";
+export * from "./gallery-adapters";
+export * from "./gallery-repositories";
 export * from "./memory";
 export * from "./memory-jobs";
 export * from "./pg/client";

@@ -5,27 +5,39 @@ import {
   CompileProject,
   type CoreDeps,
   CreateApiToken,
+  DeleteGalleryTemplate,
   DenyDeviceAuthorization,
   EnqueueCompileJob,
+  type GalleryDeps,
   GetDeviceAuthorization,
+  GetGalleryAsset,
+  GetGalleryTemplate,
   GetHealth,
   GetJob,
   GetLimits,
   GetStats,
   GetTemplate,
   ListApiTokens,
+  ListGalleryTags,
   ListJobs,
   ListTemplates,
   PollDeviceAuthorization,
   ProcessCompileJob,
+  PublishGalleryTemplate,
   PurgeExpired,
   RecoverStaleJobs,
+  ReportGalleryTemplate,
   ResolveCredential,
   RevokeApiToken,
+  SearchGallery,
+  StarGalleryTemplate,
   StartDeviceAuthorization,
+  UpdateGalleryTemplate,
 } from "@latex-api/core";
 import {
+  anonymousDirectory,
   ClerkSessionVerifier,
+  ClerkUserDirectory,
   createLogger,
   createPool,
   DockerSiblingCompiler,
@@ -35,17 +47,22 @@ import {
   FsArtifactStore,
   FsTemplateRepository,
   FsWorkspaces,
+  fflateArchiver,
+  HashingEmbedder,
   type InfraConfig,
   InlineJobQueue,
+  LocalEmbedder,
   loadConfig,
   MemoryApiTokenRepository,
   MemoryDeviceAuthRepository,
+  MemoryGalleryRepository,
   MemoryJobEvents,
   MemoryJobRepository,
   MemoryRateLimiter,
   PgApiTokenRepository,
   PgBossQueue,
   PgDeviceAuthRepository,
+  PgGalleryRepository,
   PgJobRepository,
   type PgPool,
   systemClock,
@@ -55,6 +72,8 @@ import {
 export interface Container {
   config: InfraConfig;
   deps: CoreDeps;
+  galleryDeps: GalleryDeps;
+  embedder: LocalEmbedder | HashingEmbedder;
   compiler: DockerSiblingCompiler;
   workspaces: FsWorkspaces;
   templates: FsTemplateRepository;
@@ -87,6 +106,15 @@ export interface Container {
     approveDevice: ApproveDeviceAuthorization;
     denyDevice: DenyDeviceAuthorization;
     pollDevice: PollDeviceAuthorization;
+    publishGallery: PublishGalleryTemplate;
+    updateGallery: UpdateGalleryTemplate;
+    deleteGallery: DeleteGalleryTemplate;
+    searchGallery: SearchGallery;
+    getGallery: GetGalleryTemplate;
+    getGalleryAsset: GetGalleryAsset;
+    starGallery: StarGalleryTemplate;
+    reportGallery: ReportGalleryTemplate;
+    galleryTags: ListGalleryTags;
   };
 }
 
@@ -164,9 +192,27 @@ export function build(config: InfraConfig): Container {
     sessions,
   };
 
+  const embedder =
+    config.embeddings === "local"
+      ? new LocalEmbedder({ model: config.embeddingModel, cacheDir: config.modelsDir, logger })
+      : new HashingEmbedder();
+  // Same object as deps (not a copy) so test overrides of deps reach the gallery use cases.
+  const galleryDeps: GalleryDeps = Object.assign(deps, {
+    gallery: pool ? new PgGalleryRepository(pool) : new MemoryGalleryRepository(),
+    embedder,
+    thumbnailer: compiler,
+    users: config.clerkSecretKey
+      ? new ClerkUserDirectory(config.clerkSecretKey)
+      : anonymousDirectory,
+    archiver: fflateArchiver,
+    galleryAdmins: config.galleryAdmins,
+  });
+
   return {
     config,
     deps,
+    galleryDeps,
+    embedder,
     compiler,
     workspaces,
     templates,
@@ -199,6 +245,15 @@ export function build(config: InfraConfig): Container {
       approveDevice: new ApproveDeviceAuthorization(deps),
       denyDevice: new DenyDeviceAuthorization(deps),
       pollDevice: new PollDeviceAuthorization(deps),
+      publishGallery: new PublishGalleryTemplate(galleryDeps),
+      updateGallery: new UpdateGalleryTemplate(galleryDeps),
+      deleteGallery: new DeleteGalleryTemplate(galleryDeps),
+      searchGallery: new SearchGallery(galleryDeps),
+      getGallery: new GetGalleryTemplate(galleryDeps),
+      getGalleryAsset: new GetGalleryAsset(galleryDeps),
+      starGallery: new StarGalleryTemplate(galleryDeps),
+      reportGallery: new ReportGalleryTemplate(galleryDeps),
+      galleryTags: new ListGalleryTags(galleryDeps),
     },
   };
 }

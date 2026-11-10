@@ -9,6 +9,8 @@ export interface ParsedProjectInput {
   entrypoint?: string;
   engine?: string;
   options?: z.infer<typeof CompileOptionsSchema>;
+  /** Other text fields of a multipart body, or query parameters of a raw body (e.g. gallery metadata). */
+  fields: Record<string, string>;
 }
 
 const enc = new TextEncoder();
@@ -31,6 +33,7 @@ export function fromJson(body: z.infer<typeof CompileRequestSchema>): ParsedProj
     entrypoint: body.entrypoint,
     engine: body.engine,
     options: body.options,
+    fields: {},
   };
 }
 
@@ -48,6 +51,7 @@ export async function fromRequest(c: Context, limits: Limits): Promise<ParsedPro
     let entrypoint: string | undefined;
     let engine: string | undefined;
     let options: ParsedProjectInput["options"];
+    const fields: Record<string, string> = {};
     for (const [name, value] of form.entries()) {
       if (typeof value === "string") {
         if (name === "entrypoint") entrypoint = value;
@@ -63,6 +67,7 @@ export async function fromRequest(c: Context, limits: Limits): Promise<ParsedPro
         else if (name === "force")
           options = { ...options, force: value === "true" || value === "1" };
         else if (name === "webhookUrl") options = { ...options, webhookUrl: value };
+        else fields[name] = value;
         continue;
       }
       const bytes = new Uint8Array(await value.arrayBuffer());
@@ -76,7 +81,7 @@ export async function fromRequest(c: Context, limits: Limits): Promise<ParsedPro
     }
     if (files.length === 0)
       throw new InvalidProjectError("Upload at least one file (`files` or `project` zip)");
-    return { files, entrypoint, engine, options };
+    return { files, entrypoint, engine, options, fields };
   }
 
   const raw = new Uint8Array(await c.req.raw.arrayBuffer());
@@ -95,7 +100,7 @@ export async function fromRequest(c: Context, limits: Limits): Promise<ParsedPro
     contentType.startsWith("application/x-zip-compressed")
   ) {
     const files = await extractZip(raw, limits);
-    return { files, entrypoint: query.entrypoint, engine, options };
+    return { files, entrypoint: query.entrypoint, engine, options, fields: query };
   }
   if (
     contentType.startsWith("text/x-tex") ||
@@ -106,7 +111,13 @@ export async function fromRequest(c: Context, limits: Limits): Promise<ParsedPro
   ) {
     if (raw.byteLength === 0) throw new InvalidProjectError("Empty body");
     const name = query.entrypoint ?? "main.tex";
-    return { files: [{ path: name, content: raw }], entrypoint: name, engine, options };
+    return {
+      files: [{ path: name, content: raw }],
+      entrypoint: name,
+      engine,
+      options,
+      fields: query,
+    };
   }
   throw new InvalidProjectError(`Unsupported content type "${contentType}"`);
 }

@@ -18,13 +18,22 @@ export function isPublicPath(method: string, path: string): boolean {
   if (method === "POST" && (path === "/v1/auth/device" || path === "/v1/auth/device/token"))
     return true;
   if (method === "GET" && path.startsWith("/v1/templates")) return true;
+  if (method === "GET" && path.startsWith("/v1/gallery")) return true;
   return false;
+}
+
+/** Public paths where a credential, when sent, still identifies the caller (starred flags). */
+function identifiesOptionally(method: string, path: string): boolean {
+  return method === "GET" && path.startsWith("/v1/gallery");
 }
 
 export function bearerAuth(): MiddlewareHandler<Env> {
   return async (c, next) => {
     if (isPublicPath(c.req.method, c.req.path)) {
-      c.set("principal", { name: "anonymous", kind: "anonymous" });
+      const optional = identifiesOptionally(c.req.method, c.req.path)
+        ? await resolvePrincipal(c).catch(() => null)
+        : null;
+      c.set("principal", optional ?? { name: "anonymous", kind: "anonymous" });
       return next();
     }
     const principal = await resolvePrincipal(c);

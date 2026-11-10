@@ -301,6 +301,98 @@ export type TemplateCompileRequest = {
     options?: CompileOptions;
 };
 
+export type GalleryPage = {
+    items: Array<GalleryTemplate>;
+    total: number;
+    limit: number;
+    offset: number;
+    sort: 'stars' | 'recent' | 'relevance';
+    /**
+     * True when `q` was ranked with embeddings; false means keyword matching only.
+     */
+    semantic: boolean;
+};
+
+export type GalleryTemplate = {
+    id: string;
+    slug: string;
+    name: string;
+    description: string;
+    category: GalleryCategory;
+    tags: Array<string>;
+    engine: Engine;
+    entrypoint: string;
+    author: {
+        name: string;
+        imageUrl?: string;
+    };
+    license: {
+        id: string;
+        name: string;
+        url: string;
+    };
+    version: number;
+    fileCount: number;
+    totalBytes: number;
+    pages?: number;
+    stars: number;
+    downloads: number;
+    hidden: boolean;
+    /**
+     * Whether the caller starred it (false when anonymous).
+     */
+    starred: boolean;
+    /**
+     * Search relevance, only with `q`.
+     */
+    score?: number;
+    createdAt: string;
+    updatedAt: string;
+    links: {
+        self: string;
+        web: string;
+        archive: string;
+        pdf: string;
+        thumbnail: string;
+    };
+};
+
+export type GalleryCategory = 'paper' | 'cv' | 'brochure' | 'poster' | 'report' | 'letter' | 'other';
+
+export type GalleryTemplateDetail = GalleryTemplate & {
+    canEdit: boolean;
+    canModerate: boolean;
+    /**
+     * Only visible to moderators.
+     */
+    reports?: number;
+};
+
+export type GalleryPublishRequest = {
+    name?: string;
+    description?: string;
+    category?: string;
+    tags?: Array<string>;
+    /**
+     * Must be true: the template is published under CC-BY-4.0.
+     */
+    acceptLicense: boolean;
+    files: Array<ProjectFile>;
+    entrypoint?: string;
+    engine?: Engine;
+};
+
+export type GalleryPatchRequest = {
+    name?: string;
+    description?: string;
+    category?: string;
+    tags?: Array<string>;
+    /**
+     * Moderators only.
+     */
+    hidden?: boolean;
+};
+
 export type GetV1LimitsData = {
     body?: never;
     path?: never;
@@ -1106,3 +1198,434 @@ export type PostV1TemplatesByIdJobsResponses = {
 };
 
 export type PostV1TemplatesByIdJobsResponse = PostV1TemplatesByIdJobsResponses[keyof PostV1TemplatesByIdJobsResponses];
+
+export type GetV1GalleryData = {
+    body?: never;
+    path?: never;
+    query?: {
+        q?: string;
+        /**
+         * Comma-separated; all must match
+         */
+        tags?: string;
+        category?: GalleryCategory;
+        sort?: 'stars' | 'recent' | 'relevance';
+        /**
+         * Only your templates (includes hidden ones)
+         */
+        mine?: 'true' | 'false';
+        /**
+         * Only templates you starred
+         */
+        starred?: 'true' | 'false';
+        limit?: number;
+        offset?: number | null;
+    };
+    url: '/v1/gallery';
+};
+
+export type GetV1GalleryErrors = {
+    /**
+     * `mine` or `starred` without signing in
+     */
+    403: Problem;
+};
+
+export type GetV1GalleryError = GetV1GalleryErrors[keyof GetV1GalleryErrors];
+
+export type GetV1GalleryResponses = {
+    /**
+     * Page of templates
+     */
+    200: GalleryPage;
+};
+
+export type GetV1GalleryResponse = GetV1GalleryResponses[keyof GetV1GalleryResponses];
+
+export type PostV1GalleryData = {
+    body?: GalleryPublishRequest;
+    path?: never;
+    query?: never;
+    url: '/v1/gallery';
+};
+
+export type PostV1GalleryErrors = {
+    /**
+     * Invalid metadata or project, or the license was not accepted
+     */
+    400: Problem;
+    /**
+     * Not signed in
+     */
+    401: Problem;
+    /**
+     * Not a user credential
+     */
+    403: Problem;
+    /**
+     * Too many templates
+     */
+    409: Problem;
+    /**
+     * LaTeX reported errors
+     */
+    422: Problem;
+    /**
+     * Rate limited
+     */
+    429: Problem;
+};
+
+export type PostV1GalleryError = PostV1GalleryErrors[keyof PostV1GalleryErrors];
+
+export type PostV1GalleryResponses = {
+    /**
+     * Published
+     */
+    201: {
+        template: GalleryTemplateDetail;
+    };
+};
+
+export type PostV1GalleryResponse = PostV1GalleryResponses[keyof PostV1GalleryResponses];
+
+export type GetV1GalleryTagsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+    };
+    url: '/v1/gallery/tags';
+};
+
+export type GetV1GalleryTagsResponses = {
+    /**
+     * Tags with counts
+     */
+    200: {
+        tags: Array<{
+            tag: string;
+            count: number;
+        }>;
+    };
+};
+
+export type GetV1GalleryTagsResponse = GetV1GalleryTagsResponses[keyof GetV1GalleryTagsResponses];
+
+export type DeleteV1GalleryByIdData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/v1/gallery/{id}';
+};
+
+export type DeleteV1GalleryByIdErrors = {
+    /**
+     * Not the author
+     */
+    403: Problem;
+    /**
+     * Unknown template
+     */
+    404: Problem;
+};
+
+export type DeleteV1GalleryByIdError = DeleteV1GalleryByIdErrors[keyof DeleteV1GalleryByIdErrors];
+
+export type DeleteV1GalleryByIdResponses = {
+    /**
+     * Deleted
+     */
+    204: void;
+};
+
+export type DeleteV1GalleryByIdResponse = DeleteV1GalleryByIdResponses[keyof DeleteV1GalleryByIdResponses];
+
+export type GetV1GalleryByIdData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/v1/gallery/{id}';
+};
+
+export type GetV1GalleryByIdErrors = {
+    /**
+     * Unknown or hidden template
+     */
+    404: Problem;
+};
+
+export type GetV1GalleryByIdError = GetV1GalleryByIdErrors[keyof GetV1GalleryByIdErrors];
+
+export type GetV1GalleryByIdResponses = {
+    /**
+     * Template
+     */
+    200: {
+        template: GalleryTemplateDetail;
+    };
+};
+
+export type GetV1GalleryByIdResponse = GetV1GalleryByIdResponses[keyof GetV1GalleryByIdResponses];
+
+export type PatchV1GalleryByIdData = {
+    body: GalleryPatchRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/v1/gallery/{id}';
+};
+
+export type PatchV1GalleryByIdErrors = {
+    /**
+     * Invalid metadata
+     */
+    400: Problem;
+    /**
+     * Not allowed
+     */
+    403: Problem;
+    /**
+     * Unknown template
+     */
+    404: Problem;
+};
+
+export type PatchV1GalleryByIdError = PatchV1GalleryByIdErrors[keyof PatchV1GalleryByIdErrors];
+
+export type PatchV1GalleryByIdResponses = {
+    /**
+     * Updated
+     */
+    200: {
+        template: GalleryTemplateDetail;
+    };
+};
+
+export type PatchV1GalleryByIdResponse = PatchV1GalleryByIdResponses[keyof PatchV1GalleryByIdResponses];
+
+export type PutV1GalleryByIdData = {
+    body?: GalleryPublishRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/v1/gallery/{id}';
+};
+
+export type PutV1GalleryByIdErrors = {
+    /**
+     * Not the author
+     */
+    403: Problem;
+    /**
+     * Unknown template
+     */
+    404: Problem;
+    /**
+     * LaTeX reported errors
+     */
+    422: Problem;
+};
+
+export type PutV1GalleryByIdError = PutV1GalleryByIdErrors[keyof PutV1GalleryByIdErrors];
+
+export type PutV1GalleryByIdResponses = {
+    /**
+     * New version published
+     */
+    200: {
+        template: GalleryTemplateDetail;
+    };
+};
+
+export type PutV1GalleryByIdResponse = PutV1GalleryByIdResponses[keyof PutV1GalleryByIdResponses];
+
+export type DeleteV1GalleryByIdStarData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/v1/gallery/{id}/star';
+};
+
+export type DeleteV1GalleryByIdStarErrors = {
+    /**
+     * Not a user credential
+     */
+    403: Problem;
+    /**
+     * Unknown template
+     */
+    404: Problem;
+};
+
+export type DeleteV1GalleryByIdStarError = DeleteV1GalleryByIdStarErrors[keyof DeleteV1GalleryByIdStarErrors];
+
+export type DeleteV1GalleryByIdStarResponses = {
+    /**
+     * Unstarred
+     */
+    200: {
+        stars: number;
+        starred: boolean;
+    };
+};
+
+export type DeleteV1GalleryByIdStarResponse = DeleteV1GalleryByIdStarResponses[keyof DeleteV1GalleryByIdStarResponses];
+
+export type PutV1GalleryByIdStarData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/v1/gallery/{id}/star';
+};
+
+export type PutV1GalleryByIdStarErrors = {
+    /**
+     * Not a user credential
+     */
+    403: Problem;
+    /**
+     * Unknown template
+     */
+    404: Problem;
+};
+
+export type PutV1GalleryByIdStarError = PutV1GalleryByIdStarErrors[keyof PutV1GalleryByIdStarErrors];
+
+export type PutV1GalleryByIdStarResponses = {
+    /**
+     * Starred
+     */
+    200: {
+        stars: number;
+        starred: boolean;
+    };
+};
+
+export type PutV1GalleryByIdStarResponse = PutV1GalleryByIdStarResponses[keyof PutV1GalleryByIdStarResponses];
+
+export type PostV1GalleryByIdReportData = {
+    body: {
+        reason: string;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/v1/gallery/{id}/report';
+};
+
+export type PostV1GalleryByIdReportErrors = {
+    /**
+     * Unknown template
+     */
+    404: Problem;
+    /**
+     * Your own template
+     */
+    409: Problem;
+};
+
+export type PostV1GalleryByIdReportError = PostV1GalleryByIdReportErrors[keyof PostV1GalleryByIdReportErrors];
+
+export type PostV1GalleryByIdReportResponses = {
+    /**
+     * Reported
+     */
+    200: {
+        hidden: boolean;
+    };
+};
+
+export type PostV1GalleryByIdReportResponse = PostV1GalleryByIdReportResponses[keyof PostV1GalleryByIdReportResponses];
+
+export type GetV1GalleryByIdArchiveData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/v1/gallery/{id}/archive';
+};
+
+export type GetV1GalleryByIdArchiveErrors = {
+    /**
+     * Unknown template or file
+     */
+    404: Problem;
+};
+
+export type GetV1GalleryByIdArchiveError = GetV1GalleryByIdArchiveErrors[keyof GetV1GalleryByIdArchiveErrors];
+
+export type GetV1GalleryByIdArchiveResponses = {
+    /**
+     * Download the template files as a zip
+     */
+    200: Blob | File;
+};
+
+export type GetV1GalleryByIdArchiveResponse = GetV1GalleryByIdArchiveResponses[keyof GetV1GalleryByIdArchiveResponses];
+
+export type GetV1GalleryByIdPdfData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/v1/gallery/{id}/pdf';
+};
+
+export type GetV1GalleryByIdPdfErrors = {
+    /**
+     * Unknown template or file
+     */
+    404: Problem;
+};
+
+export type GetV1GalleryByIdPdfError = GetV1GalleryByIdPdfErrors[keyof GetV1GalleryByIdPdfErrors];
+
+export type GetV1GalleryByIdPdfResponses = {
+    /**
+     * The compiled PDF of the published version
+     */
+    200: Blob | File;
+};
+
+export type GetV1GalleryByIdPdfResponse = GetV1GalleryByIdPdfResponses[keyof GetV1GalleryByIdPdfResponses];
+
+export type GetV1GalleryByIdThumbnailData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/v1/gallery/{id}/thumbnail';
+};
+
+export type GetV1GalleryByIdThumbnailErrors = {
+    /**
+     * Unknown template or file
+     */
+    404: Problem;
+};
+
+export type GetV1GalleryByIdThumbnailError = GetV1GalleryByIdThumbnailErrors[keyof GetV1GalleryByIdThumbnailErrors];
+
+export type GetV1GalleryByIdThumbnailResponses = {
+    /**
+     * PNG of the first page (600 px wide)
+     */
+    200: Blob | File;
+};
+
+export type GetV1GalleryByIdThumbnailResponse = GetV1GalleryByIdThumbnailResponses[keyof GetV1GalleryByIdThumbnailResponses];

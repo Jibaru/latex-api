@@ -30,7 +30,12 @@ export async function Templates() {
           <p className="mt-4 text-[1.05rem] leading-relaxed text-ink-2">
             Every template compiles inside the sandbox as shipped. Download the zip, or send only
             the files you changed to{" "}
-            <code className="font-mono text-[0.9em]">/v1/templates/:id/compile</code>.
+            <code className="font-mono text-[0.9em]">/v1/templates/:id/compile</code>. Looking for
+            more? The{" "}
+            <Link href="/gallery" className="link">
+              community gallery
+            </Link>{" "}
+            has templates shared by other people, searchable in any language.
           </p>
         </div>
         <ul className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

@@ -8,6 +8,7 @@ import { bearerAuth, type Env } from "./auth";
 import { onError, problem } from "./errors";
 import { registerAccountRoutes } from "./routes/account";
 import { registerCompileRoutes } from "./routes/compile";
+import { registerGalleryRoutes } from "./routes/gallery";
 import { registerJobRoutes } from "./routes/jobs";
 import { API_VERSION, registerMetaRoutes } from "./routes/meta";
 import { registerTemplateRoutes } from "./routes/templates";
@@ -74,7 +75,7 @@ export function createHttpApp(
     "*",
     cors({
       origin: "*",
-      allowMethods: ["GET", "POST", "DELETE", "PATCH", "OPTIONS"],
+      allowMethods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
       allowHeaders: ["Authorization", "Content-Type", "Accept", "X-API-Key", "X-Request-Id"],
       exposeHeaders: [
         "X-Job-Id",
@@ -105,6 +106,7 @@ export function createHttpApp(
   registerCompileRoutes(hono);
   registerJobRoutes(hono);
   registerTemplateRoutes(hono);
+  registerGalleryRoutes(hono);
 
   hono.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", {
     type: "http",
@@ -129,6 +131,10 @@ export function createHttpApp(
       { name: "Compile", description: "Synchronous compilation" },
       { name: "Jobs", description: "Asynchronous jobs, artifacts and live events" },
       { name: "Templates", description: "Ready-to-use starter projects" },
+      {
+        name: "Gallery",
+        description: "Community templates: publish, search, star and download (CC-BY 4.0)",
+      },
       { name: "Account", description: "Identity, personal API tokens and CLI sign-in" },
       { name: "Meta", description: "Limits, health and statistics" },
     ],

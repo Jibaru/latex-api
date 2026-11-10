@@ -61,6 +61,11 @@ RUN set -eux; cd /tmp/warm; \
     cd / && rm -rf /tmp/warm; \
     ls /opt/texlive/texmf-var/luatex-cache/generic/names
 
+# ---- pdftoppm renders gallery thumbnails (page one to PNG). Late layer: keeps the TeX cache.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends poppler-utils \
+ && rm -rf /var/lib/apt/lists/*
+
 COPY --chmod=0755 compile.sh /usr/local/bin/compile
 COPY VERSION /etc/latex-compiler-version
 

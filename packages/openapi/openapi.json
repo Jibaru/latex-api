@@ -33,6 +33,10 @@
       "description": "Ready-to-use starter projects"
     },
     {
+      "name": "Gallery",
+      "description": "Community templates: publish, search, star and download (CC-BY 4.0)"
+    },
+    {
       "name": "Account",
       "description": "Identity, personal API tokens and CLI sign-in"
     },
@@ -1039,6 +1043,300 @@
           },
           "options": {
             "$ref": "#/components/schemas/CompileOptions"
+          }
+        }
+      },
+      "GalleryPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GalleryTemplate"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "stars",
+              "recent",
+              "relevance"
+            ]
+          },
+          "semantic": {
+            "type": "boolean",
+            "description": "True when `q` was ranked with embeddings; false means keyword matching only."
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset",
+          "sort",
+          "semantic"
+        ]
+      },
+      "GalleryTemplate": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "gt_4fK9aQ2LmZ"
+          },
+          "slug": {
+            "type": "string",
+            "example": "thesis-untels"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/GalleryCategory"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "engine": {
+            "$ref": "#/components/schemas/Engine"
+          },
+          "entrypoint": {
+            "type": "string"
+          },
+          "author": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "imageUrl": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "license": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "url"
+            ]
+          },
+          "version": {
+            "type": "integer"
+          },
+          "fileCount": {
+            "type": "integer"
+          },
+          "totalBytes": {
+            "type": "integer"
+          },
+          "pages": {
+            "type": "integer"
+          },
+          "stars": {
+            "type": "integer"
+          },
+          "downloads": {
+            "type": "integer"
+          },
+          "hidden": {
+            "type": "boolean"
+          },
+          "starred": {
+            "type": "boolean",
+            "description": "Whether the caller starred it (false when anonymous)."
+          },
+          "score": {
+            "type": "number",
+            "description": "Search relevance, only with `q`."
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "links": {
+            "type": "object",
+            "properties": {
+              "self": {
+                "type": "string"
+              },
+              "web": {
+                "type": "string"
+              },
+              "archive": {
+                "type": "string"
+              },
+              "pdf": {
+                "type": "string"
+              },
+              "thumbnail": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "self",
+              "web",
+              "archive",
+              "pdf",
+              "thumbnail"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "description",
+          "category",
+          "tags",
+          "engine",
+          "entrypoint",
+          "author",
+          "license",
+          "version",
+          "fileCount",
+          "totalBytes",
+          "stars",
+          "downloads",
+          "hidden",
+          "starred",
+          "createdAt",
+          "updatedAt",
+          "links"
+        ]
+      },
+      "GalleryCategory": {
+        "type": "string",
+        "enum": [
+          "paper",
+          "cv",
+          "brochure",
+          "poster",
+          "report",
+          "letter",
+          "other"
+        ]
+      },
+      "GalleryTemplateDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GalleryTemplate"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "canEdit": {
+                "type": "boolean"
+              },
+              "canModerate": {
+                "type": "boolean"
+              },
+              "reports": {
+                "type": "integer",
+                "description": "Only visible to moderators."
+              }
+            },
+            "required": [
+              "canEdit",
+              "canModerate"
+            ]
+          }
+        ]
+      },
+      "GalleryPublishRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "acceptLicense": {
+            "type": "boolean",
+            "description": "Must be true: the template is published under CC-BY-4.0."
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectFile"
+            },
+            "minItems": 1
+          },
+          "entrypoint": {
+            "type": "string"
+          },
+          "engine": {
+            "$ref": "#/components/schemas/Engine"
+          }
+        },
+        "required": [
+          "acceptLicense",
+          "files"
+        ]
+      },
+      "GalleryPatchRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "hidden": {
+            "type": "boolean",
+            "description": "Moderators only."
           }
         }
       }
@@ -2742,6 +3040,990 @@
           },
           "404": {
             "description": "Unknown template",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/gallery": {
+      "get": {
+        "tags": [
+          "Gallery"
+        ],
+        "summary": "Browse and search the public template gallery",
+        "description": "Without `q`, sorted by stars (default) or by date. With `q`, ranked by meaning (multilingual embeddings) plus keyword matches; `sort` can still reorder the matches. Send a token to get `starred` flags and to use `mine` or `starred`.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 300,
+              "example": "tesis universidad apa"
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated; all must match",
+              "example": "thesis,spanish"
+            },
+            "required": false,
+            "description": "Comma-separated; all must match",
+            "name": "tags",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "$ref": "#/components/schemas/GalleryCategory"
+            },
+            "required": false,
+            "name": "category",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "stars",
+                "recent",
+                "relevance"
+              ]
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ],
+              "description": "Only your templates (includes hidden ones)"
+            },
+            "required": false,
+            "description": "Only your templates (includes hidden ones)",
+            "name": "mine",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ],
+              "description": "Only templates you starred"
+            },
+            "required": false,
+            "description": "Only templates you starred",
+            "name": "starred",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Page of templates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GalleryPage"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`mine` or `starred` without signing in",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Gallery"
+        ],
+        "summary": "Publish a template",
+        "description": "Compiles the project in the sandbox and publishes it only if it produces a PDF. Requires a signed-in user (a personal token or a browser session) and `acceptLicense: true`: gallery templates are shared under Creative Commons Attribution 4.0 International. On LaTeX errors the response is the same `422 compile_failed` as `/v1/compile`.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GalleryPublishRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "project": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Zip of the project"
+                  },
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "category": {
+                    "type": "string"
+                  },
+                  "tags": {
+                    "type": "string",
+                    "description": "Comma-separated"
+                  },
+                  "entrypoint": {
+                    "type": "string"
+                  },
+                  "engine": {
+                    "type": "string"
+                  },
+                  "acceptLicense": {
+                    "type": "string",
+                    "enum": [
+                      "true"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Published",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "template": {
+                      "$ref": "#/components/schemas/GalleryTemplateDetail"
+                    }
+                  },
+                  "required": [
+                    "template"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid metadata or project, or the license was not accepted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not a user credential",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Too many templates",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "LaTeX reported errors",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/gallery/tags": {
+      "get": {
+        "tags": [
+          "Gallery"
+        ],
+        "summary": "Most used gallery tags",
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tags with counts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "tag": {
+                            "type": "string"
+                          },
+                          "count": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "tag",
+                          "count"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "tags"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/gallery/{id}": {
+      "put": {
+        "tags": [
+          "Gallery"
+        ],
+        "summary": "Publish a new version of your template",
+        "description": "Same body as publishing; metadata fields you omit keep their current value.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^gt_[0-9A-Za-z]{10}$",
+              "example": "gt_4fK9aQ2LmZ"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GalleryPublishRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "project": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Zip of the project"
+                  },
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "category": {
+                    "type": "string"
+                  },
+                  "tags": {
+                    "type": "string",
+                    "description": "Comma-separated"
+                  },
+                  "entrypoint": {
+                    "type": "string"
+                  },
+                  "engine": {
+                    "type": "string"
+                  },
+                  "acceptLicense": {
+                    "type": "string",
+                    "enum": [
+                      "true"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "New version published",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "template": {
+                      "$ref": "#/components/schemas/GalleryTemplateDetail"
+                    }
+                  },
+                  "required": [
+                    "template"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the author",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown template",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "LaTeX reported errors",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Gallery"
+        ],
+        "summary": "Get a gallery template",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^gt_[0-9A-Za-z]{10}$",
+              "example": "gt_4fK9aQ2LmZ"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Template",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "template": {
+                      "$ref": "#/components/schemas/GalleryTemplateDetail"
+                    }
+                  },
+                  "required": [
+                    "template"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown or hidden template",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Gallery"
+        ],
+        "summary": "Edit metadata, or hide / unhide (moderators)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^gt_[0-9A-Za-z]{10}$",
+              "example": "gt_4fK9aQ2LmZ"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GalleryPatchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "template": {
+                      "$ref": "#/components/schemas/GalleryTemplateDetail"
+                    }
+                  },
+                  "required": [
+                    "template"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid metadata",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown template",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Gallery"
+        ],
+        "summary": "Delete your template",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^gt_[0-9A-Za-z]{10}$",
+              "example": "gt_4fK9aQ2LmZ"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "403": {
+            "description": "Not the author",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown template",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/gallery/{id}/star": {
+      "put": {
+        "tags": [
+          "Gallery"
+        ],
+        "summary": "Star a template",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^gt_[0-9A-Za-z]{10}$",
+              "example": "gt_4fK9aQ2LmZ"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Starred",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "stars": {
+                      "type": "integer"
+                    },
+                    "starred": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "stars",
+                    "starred"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not a user credential",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown template",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Gallery"
+        ],
+        "summary": "Remove your star",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^gt_[0-9A-Za-z]{10}$",
+              "example": "gt_4fK9aQ2LmZ"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Unstarred",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "stars": {
+                      "type": "integer"
+                    },
+                    "starred": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "stars",
+                    "starred"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not a user credential",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown template",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/gallery/{id}/report": {
+      "post": {
+        "tags": [
+          "Gallery"
+        ],
+        "summary": "Report a template",
+        "description": "One report per user. A template is hidden after several reports until a moderator reviews it.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^gt_[0-9A-Za-z]{10}$",
+              "example": "gt_4fK9aQ2LmZ"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reported",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "hidden": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "hidden"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown template",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Your own template",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/gallery/{id}/archive": {
+      "get": {
+        "tags": [
+          "Gallery"
+        ],
+        "summary": "Download the template files as a zip",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^gt_[0-9A-Za-z]{10}$",
+              "example": "gt_4fK9aQ2LmZ"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Download the template files as a zip",
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown template or file",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/gallery/{id}/pdf": {
+      "get": {
+        "tags": [
+          "Gallery"
+        ],
+        "summary": "The compiled PDF of the published version",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^gt_[0-9A-Za-z]{10}$",
+              "example": "gt_4fK9aQ2LmZ"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The compiled PDF of the published version",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown template or file",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/gallery/{id}/thumbnail": {
+      "get": {
+        "tags": [
+          "Gallery"
+        ],
+        "summary": "PNG of the first page (600 px wide)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^gt_[0-9A-Za-z]{10}$",
+              "example": "gt_4fK9aQ2LmZ"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PNG of the first page (600 px wide)",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown template or file",
             "content": {
               "application/problem+json": {
                 "schema": {
