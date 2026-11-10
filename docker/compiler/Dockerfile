@@ -18,24 +18,37 @@ RUN apt-get update \
 COPY texlive.profile /tmp/texlive.profile
 RUN set -eux; \
     mkdir -p /tmp/install-tl && cd /tmp/install-tl; \
-    curl -fsSL "${TEXLIVE_MIRROR}/install-tl-unx.tar.gz" | tar xz --strip-components=1; \
-    ./install-tl --profile=/tmp/texlive.profile --repository "${TEXLIVE_MIRROR}" --no-interaction; \
+    mirror=$(curl -fsSIL -o /dev/null -w '%{url_effective}' "${TEXLIVE_MIRROR}/install-tl-unx.tar.gz" \
+      | sed 's#/install-tl-unx.tar.gz$##'); \
+    echo "TeX Live mirror: ${mirror}"; \
+    curl -fsSL "${mirror}/install-tl-unx.tar.gz" | tar xz --strip-components=1; \
+    ./install-tl --profile=/tmp/texlive.profile --repository "${mirror}" --no-interaction; \
     rm -rf /tmp/install-tl /tmp/texlive.profile
 
 # ---- Extra collections and packages for the target document types.
 # tlmgr updates itself first: the base layer may be cached from an older tlmgr than the mirror requires.
 # NEVER add collection-publishers or collection-fontsextra: they pull 2+ GB of fonts.
+# mirror.ctan.org redirects every request to a different mirror, and a mirror a day behind
+# the base install makes tlmgr refuse ("remote database older than local"). Each attempt pins
+# one concrete mirror for the whole step and moves on to another if it is down or stale.
 RUN set -eux; \
+    for attempt in 1 2 3 4 5 6; do \
+      mirror=$(curl -fsSIL -o /dev/null -w '%{url_effective}' "${TEXLIVE_MIRROR}/tlpkg/texlive.tlpdb.sha512" \
+        | sed 's#/tlpkg/texlive.tlpdb.sha512$##') || mirror="${TEXLIVE_MIRROR}"; \
+      echo "attempt ${attempt}: ${mirror}"; \
+      if tlmgr option repository "${mirror}" && tlmgr update --self && tlmgr install \
+        collection-pictures collection-latexextra collection-bibtexextra collection-luatex \
+        collection-fontsrecommended collection-langspanish collection-mathscience collection-binextra \
+        latexmk biber ieeetran fontawesome5 fontawesome6 academicons simpleicons \
+        roboto sourcesans lato raleway fira firamath inter montserrat \
+        lm-math xits libertinus-fonts gnu-freefont \
+        biblatex-ieee biblatex-apa \
+        newtx newpx txfonts pxfonts fontaxes kastrup boondox mathalpha stix2-type1 stix2-otf; \
+      then break; fi; \
+      if [ "${attempt}" = 6 ]; then echo "no usable TeX Live mirror" >&2; exit 1; fi; \
+      sleep 10; \
+    done; \
     tlmgr option repository "${TEXLIVE_MIRROR}"; \
-    tlmgr update --self; \
-    tlmgr install \
-      collection-pictures collection-latexextra collection-bibtexextra collection-luatex \
-      collection-fontsrecommended collection-langspanish collection-mathscience collection-binextra \
-      latexmk biber ieeetran fontawesome5 fontawesome6 academicons simpleicons \
-      roboto sourcesans lato raleway fira firamath inter montserrat \
-      lm-math xits libertinus-fonts gnu-freefont \
-      biblatex-ieee biblatex-apa \
-      newtx newpx txfonts pxfonts fontaxes kastrup boondox mathalpha stix2-type1 stix2-otf; \
     tlmgr option autobackup 0; \
     rm -rf /opt/texlive/tlpkg/backups /opt/texlive/texmf-dist/doc /opt/texlive/texmf-dist/source
 
