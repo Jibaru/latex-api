@@ -58,6 +58,8 @@ export interface GalleryTemplate {
   excerpt?: string;
   /** Embedding of name, description, tags and the start of the source, for semantic search. */
   embedding?: number[];
+  /** Model that produced `embedding`; vectors from another model are never compared. */
+  embeddingModel?: string;
 }
 
 export const galleryKeys = {
@@ -153,15 +155,33 @@ export function validateMetadata(input: GalleryMetadataInput): GalleryMetadata {
   return { name, description, category, tags: normalizeTags(input.tags ?? []) };
 }
 
-/** Text that represents a template for semantic search (E5 "passage"). */
+/** Text that represents a template for semantic search. */
 export function embeddingText(
   meta: Pick<GalleryTemplate, "name" | "description" | "tags" | "category">,
   source?: string,
 ): string {
-  const head = source ? source.replace(/%.*$/gm, "").replace(/\s+/g, " ").slice(0, 1200) : "";
+  const head = source ? latexToText(source).slice(0, 500) : "";
   return [meta.name, meta.description, `${meta.category}. ${meta.tags.join(", ")}`, head]
     .filter(Boolean)
     .join("\n");
+}
+
+/**
+ * Visible words of a LaTeX document body: no preamble, comments, commands, options, math or
+ * braces. Markup makes every template look alike to the embedding model, so it is removed.
+ */
+export function latexToText(source: string): string {
+  const begin = source.indexOf("\\begin{document}");
+  const body = begin >= 0 ? source.slice(begin + "\\begin{document}".length) : source;
+  return body
+    .replace(/(^|[^\\])%.*$/gm, "$1")
+    .replace(/\$\$[\s\S]*?\$\$|\$[^$]*\$/g, " ")
+    .replace(/\\(begin|end)\{[^}]*\}/g, " ")
+    .replace(/\\[a-zA-Z@]+\*?(\[[^\]]*\])?/g, " ")
+    .replace(/\\./g, " ")
+    .replace(/[{}[\]&~^_#]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export function cosine(a: readonly number[], b: readonly number[]): number {

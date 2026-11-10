@@ -39,7 +39,7 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-info}
       # Gallery moderators (Clerk user ids, not secrets): can hide, unhide and delete any template.
       GALLERY_ADMINS: ${GALLERY_ADMINS:-user_3L6V7u9pwZfcWyJRBD8oC1V0i1l,user_3L4qD1frGO4tJSX7X7iGszIMwDP}
-      # Gallery search runs multilingual-e5-small in-process; weights are cached in /data/models.
+      # Gallery search runs a multilingual MiniLM in-process; weights are cached in /data/models.
       EMBEDDINGS: ${EMBEDDINGS:-local}
     volumes:
       # Host bind (not a named volume): compile containers mount sub-directories of it.

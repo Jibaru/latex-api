@@ -77,7 +77,7 @@ Put a reverse proxy in front with `/`, `/docs` going to `web` and `/v1`, `/opena
 | `LOG_LEVEL`               | no       | `info`                  | pino level                                                             |
 | `GALLERY_ADMINS`          | no       |                         | Comma-separated user ids that can hide and delete gallery templates    |
 | `EMBEDDINGS`              | no       | `local`                 | `local` runs the gallery search model in-process; `hashing` disables it (keyword search) |
-| `EMBEDDING_MODEL`         | no       | `Xenova/multilingual-e5-small` | Any Hugging Face feature-extraction model with ONNX weights     |
+| `EMBEDDING_MODEL`         | no       | `Xenova/paraphrase-multilingual-MiniLM-L12-v2` | Any Hugging Face feature-extraction model with ONNX weights; templates are re-embedded at boot when it changes |
 | `MODELS_DIR`              | no       | `$DATA_DIR/models`      | Where model weights are cached (downloaded on first use, ~120 MB)      |
 | Limits                    | no       | see [Limits](/docs/limits) | `MAX_UPLOAD_BYTES`, `SYNC_TIMEOUT_MS`, `JOB_MEMORY`, ...             |
 

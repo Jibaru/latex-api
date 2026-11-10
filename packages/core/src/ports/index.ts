@@ -181,11 +181,13 @@ export interface GalleryRepository {
   incrementDownloads(id: string): Promise<void>;
   /** Records a report; returns false if this user already reported it. Keeps `reports` in sync. */
   report(id: string, userId: string, reason: string, at: Date): Promise<boolean>;
+  /** Templates whose embedding is missing or was made by another model (re-indexing). */
+  staleEmbeddings(model: string, limit: number): Promise<GalleryTemplate[]>;
   /** Most used tags among visible templates. */
   popularTags(limit: number): Promise<Array<{ tag: string; count: number }>>;
 }
 
-/** Turns text into vectors for semantic search (E5-style query/passage prefixes). */
+/** Turns text into vectors for semantic search. */
 export interface Embedder {
   readonly model: string;
   embedPassage(text: string): Promise<number[]>;

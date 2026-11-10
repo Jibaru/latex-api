@@ -26,6 +26,7 @@ import {
   PublishGalleryTemplate,
   PurgeExpired,
   RecoverStaleJobs,
+  ReindexGallery,
   ReportGalleryTemplate,
   ResolveCredential,
   RevokeApiToken,
@@ -115,6 +116,7 @@ export interface Container {
     starGallery: StarGalleryTemplate;
     reportGallery: ReportGalleryTemplate;
     galleryTags: ListGalleryTags;
+    reindexGallery: ReindexGallery;
   };
 }
 
@@ -254,6 +256,7 @@ export function build(config: InfraConfig): Container {
       starGallery: new StarGalleryTemplate(galleryDeps),
       reportGallery: new ReportGalleryTemplate(galleryDeps),
       galleryTags: new ListGalleryTags(galleryDeps),
+      reindexGallery: new ReindexGallery(galleryDeps),
     },
   };
 }

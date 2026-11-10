@@ -127,6 +127,10 @@ const MIGRATIONS: Array<{ id: string; sql: string }> = [
       );
     `,
   },
+  {
+    id: "0004_gallery_embedding_model",
+    sql: "ALTER TABLE gallery_templates ADD COLUMN IF NOT EXISTS embedding_model TEXT;",
+  },
 ];
 
 /** Tiny forward-only migrator; keeps the API free of a migration toolchain at runtime. */

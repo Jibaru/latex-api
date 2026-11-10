@@ -9,6 +9,13 @@ type Extractor = (
   options: { pooling: "mean"; normalize: boolean },
 ) => Promise<{ data: Float32Array | number[] }>;
 
+/**
+ * Chosen over multilingual-e5-small after measuring both on the bundled templates: same size,
+ * but unrelated queries score far lower (≤0.23 against ≥0.29 for related ones), so a fixed
+ * threshold separates them; e5 put everything between 0.75 and 0.90.
+ */
+export const DEFAULT_EMBEDDING_MODEL = "Xenova/paraphrase-multilingual-MiniLM-L12-v2";
+
 export interface LocalEmbedderOptions {
   /** Hugging Face model id with ONNX weights. */
   model?: string;
@@ -27,15 +34,21 @@ export class LocalEmbedder implements Embedder {
   private loading: Promise<Extractor> | undefined;
 
   constructor(private readonly opts: LocalEmbedderOptions) {
-    this.model = opts.model ?? "Xenova/multilingual-e5-small";
+    this.model = opts.model ?? DEFAULT_EMBEDDING_MODEL;
+  }
+
+  /** E5 models are trained with "query: " / "passage: " prefixes; other models are not. */
+  private get prefixed(): boolean {
+    return /e5/i.test(this.model);
   }
 
   embedPassage(text: string): Promise<number[]> {
-    return this.embed(`passage: ${text}`);
+    return this.embed(this.prefixed ? `passage: ${text}` : text);
   }
 
   embedQuery(text: string): Promise<number[]> {
-    return this.embed(`query: ${text.slice(0, 500)}`);
+    const q = text.slice(0, 500);
+    return this.embed(this.prefixed ? `query: ${q}` : q);
   }
 
   /** Starts loading the model in the background (boot), so the first search is fast. */

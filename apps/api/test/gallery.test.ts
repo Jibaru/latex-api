@@ -208,6 +208,22 @@ describe("public template gallery", () => {
     expect((await ctx.app.request(`/v1/gallery/${t.id}`, { headers: session })).status).toBe(404);
   });
 
+  it("never compares vectors from another model and re-indexes them", async () => {
+    await publish();
+    const deps = ctx.container.galleryDeps;
+    const original = deps.embedder;
+    // A different model with the same dimensions: old vectors must not be used for ranking.
+    deps.embedder = {
+      model: "other-model",
+      embedPassage: (t) => original.embedPassage(t),
+      embedQuery: (t) => original.embedQuery(t),
+    };
+    expect(await ctx.container.useCases.reindexGallery.execute()).toBe(1);
+    expect(await ctx.container.useCases.reindexGallery.execute()).toBe(0);
+    const [row] = await deps.gallery.candidates({});
+    expect(row?.embeddingModel).toBe("other-model");
+  });
+
   it("records one report per user and refuses self-reports", async () => {
     const t = (await publish()).json.template;
     const report = (headers: Record<string, string>) =>

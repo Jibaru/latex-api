@@ -40,7 +40,7 @@ curl "https://latex-api.crafter.run/v1/gallery?q=tesis%20con%20normas%20apa&tags
 | `sort`     | `relevance` (default with `q`), `stars` (default without), `recent`      |
 | `limit`, `offset` | Paging, up to 100 per page                                        |
 
-Search embeds the name, description, tags and the start of the main `.tex` with a multilingual model ([multilingual-e5-small](https://huggingface.co/intfloat/multilingual-e5-small)) that runs inside the API, so "CV for a data scientist" finds a résumé whose description says *hoja de vida*. A template matches when its meaning is close to the query or when a query word appears in its name, tags or description. `semantic: false` in the response means the model was not available and only keyword matches were returned.
+Search embeds the name, description, tags and the start of the main `.tex` with a multilingual model ([paraphrase-multilingual-MiniLM-L12-v2](https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2)) that runs inside the API, so "CV for a data scientist" finds a résumé whose description says *hoja de vida*. A template matches when its meaning is close to the query or when a query word appears in its name, tags or description. `semantic: false` in the response means the model was not available and only keyword matches were returned.
 
 ## Publishing
 

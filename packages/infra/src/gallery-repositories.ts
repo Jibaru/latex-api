@@ -32,6 +32,7 @@ interface Row {
   updated_at: Date;
   excerpt: string | null;
   embedding?: number[] | null;
+  embedding_model?: string | null;
 }
 
 function toTemplate(row: Row): GalleryTemplate {
@@ -62,6 +63,7 @@ function toTemplate(row: Row): GalleryTemplate {
     updatedAt: row.updated_at,
     excerpt: row.excerpt ?? undefined,
     embedding: row.embedding ?? undefined,
+    embeddingModel: row.embedding_model ?? undefined,
   };
 }
 
@@ -94,6 +96,7 @@ function values(t: GalleryTemplate): unknown[] {
     t.updatedAt,
     t.excerpt ?? null,
     t.embedding ?? null,
+    t.embeddingModel ?? null,
   ];
 }
 
@@ -128,14 +131,14 @@ export class PgGalleryRepository implements GalleryRepository {
   async insert(t: GalleryTemplate): Promise<void> {
     const v = values(t);
     await this.pool.query(
-      `INSERT INTO gallery_templates (${BASE_COLUMNS}, embedding) VALUES (${v.map((_, i) => `$${i + 1}`).join(",")})`,
+      `INSERT INTO gallery_templates (${BASE_COLUMNS}, embedding, embedding_model) VALUES (${v.map((_, i) => `$${i + 1}`).join(",")})`,
       v,
     );
   }
 
   async update(t: GalleryTemplate): Promise<void> {
     const v = values(t);
-    const cols = `${BASE_COLUMNS}, embedding`.split(", ");
+    const cols = `${BASE_COLUMNS}, embedding, embedding_model`.split(", ");
     // stars/downloads/reports are counters maintained by their own statements.
     const sets = cols
       .map((c, i) => [c, i] as const)
@@ -146,7 +149,7 @@ export class PgGalleryRepository implements GalleryRepository {
 
   async get(id: string): Promise<GalleryTemplate | null> {
     const { rows } = await this.pool.query<Row>(
-      `SELECT ${BASE_COLUMNS}, embedding FROM gallery_templates WHERE id = $1`,
+      `SELECT ${BASE_COLUMNS}, embedding, embedding_model FROM gallery_templates WHERE id = $1`,
       [id],
     );
     return rows[0] ? toTemplate(rows[0]) : null;
@@ -182,7 +185,9 @@ export class PgGalleryRepository implements GalleryRepository {
     const { rows } = await this.pool.query<Row>(
       `SELECT ${BASE_COLUMNS.split(", ")
         .map((c) => `g.${c}`)
-        .join(", ")}, g.embedding FROM gallery_templates g ${where(filter, params)} LIMIT 20000`,
+        .join(
+          ", ",
+        )}, g.embedding, g.embedding_model FROM gallery_templates g ${where(filter, params)} LIMIT 20000`,
       params,
     );
     return rows.map(toTemplate);
@@ -245,6 +250,15 @@ export class PgGalleryRepository implements GalleryRepository {
       [id, userId, reason, at],
     );
     return (res.rowCount ?? 0) > 0;
+  }
+
+  async staleEmbeddings(model: string, limit: number): Promise<GalleryTemplate[]> {
+    const { rows } = await this.pool.query<Row>(
+      `SELECT ${BASE_COLUMNS}, embedding, embedding_model FROM gallery_templates
+       WHERE embedding_model IS DISTINCT FROM $1 ORDER BY created_at LIMIT $2`,
+      [model, limit],
+    );
+    return rows.map(toTemplate);
   }
 
   async popularTags(limit: number) {
@@ -351,6 +365,12 @@ export class MemoryGalleryRepository implements GalleryRepository {
     const t = this.rows.get(id);
     if (t) t.reports++;
     return true;
+  }
+  async staleEmbeddings(model: string, limit: number) {
+    return Array.from(this.rows.values())
+      .filter((t) => t.embeddingModel !== model)
+      .slice(0, limit)
+      .map((t) => structuredClone(t));
   }
   async popularTags(limit: number) {
     const counts = new Map<string, number>();

@@ -14,6 +14,7 @@ import {
   type GallerySort,
   type GalleryTemplate,
   galleryKeys,
+  latexToText,
   newGalleryId,
   normalizeTags,
   slugify,
@@ -46,11 +47,12 @@ export interface GalleryDeps extends CoreDeps {
 export const AUTO_HIDE_REPORTS = 5;
 /**
  * A template matches by meaning alone when its cosine similarity is at least SEMANTIC_FLOOR and
- * within SEMANTIC_BAND of the best match. Calibrated on multilingual-e5-small, whose scores
- * are compressed: related pairs land around 0.85-0.89, unrelated ones around 0.75-0.83.
+ * within SEMANTIC_BAND of the best match. Calibrated on paraphrase-multilingual-MiniLM-L12-v2
+ * against the bundled templates: unrelated queries ("receta de cocina", "factura") top out
+ * around 0.23, related ones land between 0.29 and 0.66.
  */
-export const SEMANTIC_FLOOR = 0.83;
-export const SEMANTIC_BAND = 0.03;
+export const SEMANTIC_FLOOR = 0.27;
+export const SEMANTIC_BAND = 0.12;
 
 const decoder = new TextDecoder("utf-8", { fatal: false });
 
@@ -82,16 +84,13 @@ async function load(
   return t;
 }
 
-async function embedSafely(
-  deps: GalleryDeps,
-  t: Pick<GalleryTemplate, "name" | "description" | "tags" | "category">,
-  source: string | undefined,
-): Promise<number[] | undefined> {
+/** Sets `embedding` and `embeddingModel`; on failure the template stays keyword-searchable. */
+async function embedSafely(deps: GalleryDeps, t: GalleryTemplate): Promise<void> {
   try {
-    return await deps.embedder.embedPassage(embeddingText(t, source));
+    t.embedding = await deps.embedder.embedPassage(embeddingText(t, t.excerpt));
+    t.embeddingModel = deps.embedder.model;
   } catch (error) {
     deps.logger.warn({ err: error }, "gallery embedding failed; template stays keyword-searchable");
-    return undefined;
   }
 }
 
@@ -210,9 +209,9 @@ export class PublishGalleryTemplate {
       hidden: previous?.hidden ?? false,
       createdAt: previous?.createdAt ?? now,
       updatedAt: now,
-      excerpt: source?.slice(0, 2000),
+      excerpt: source ? latexToText(source).slice(0, 2000) : undefined,
     };
-    template.embedding = await embedSafely(deps, template, template.excerpt);
+    await embedSafely(deps, template);
 
     if (previous) {
       await deps.gallery.update(template);
@@ -264,7 +263,7 @@ export class UpdateGalleryTemplate {
         tags: patch.tags ?? t.tags,
       });
       Object.assign(t, meta, { slug: slugify(meta.name) });
-      t.embedding = (await embedSafely(deps, t, t.excerpt)) ?? t.embedding;
+      await embedSafely(deps, t);
       t.updatedAt = deps.clock.now();
     }
     if (patch.hidden !== undefined) {
@@ -356,7 +355,10 @@ export class SearchGallery {
       const ranked = candidates.map((t) => ({
         t,
         keyword: keywordScore(t, terms),
-        sim: queryVector && t.embedding ? cosine(queryVector, t.embedding) : 0,
+        sim:
+          queryVector && t.embedding && t.embeddingModel === deps.embedder.model
+            ? cosine(queryVector, t.embedding)
+            : 0,
       }));
       const best = Math.max(0, ...ranked.map((r) => r.sim));
       const cutoff = Math.max(SEMANTIC_FLOOR, best - SEMANTIC_BAND);
@@ -498,6 +500,32 @@ export class ReportGalleryTemplate {
       );
     }
     return { hidden: after?.hidden ?? false };
+  }
+}
+
+/**
+ * Re-embeds templates whose vectors are missing or come from another model (after changing
+ * EMBEDDING_MODEL, or when the model was unavailable at publish time). Run at boot.
+ */
+export class ReindexGallery {
+  constructor(private readonly deps: GalleryDeps) {}
+
+  async execute(batch = 100): Promise<number> {
+    const { gallery, embedder, logger } = this.deps;
+    let done = 0;
+    for (;;) {
+      const stale = await gallery.staleEmbeddings(embedder.model, batch);
+      if (stale.length === 0) break;
+      for (const t of stale) {
+        t.embedding = await embedder.embedPassage(embeddingText(t, t.excerpt));
+        t.embeddingModel = embedder.model;
+        await gallery.update(t);
+        done++;
+      }
+      if (stale.length < batch) break;
+    }
+    if (done > 0) logger.info({ reindexed: done, model: embedder.model }, "gallery re-indexed");
+    return done;
   }
 }
 
